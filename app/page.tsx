@@ -1,4 +1,5 @@
 import { FlashcardStudio } from "@/components/FlashcardStudio";
+import Image from "next/image";
 import {
   flashcardTemplates,
   planTiers,
@@ -116,7 +117,12 @@ export default function Home() {
         <div className="asset-grid">
           {vocabularyAssets.map((asset) => (
             <article className="asset-card" key={asset.id}>
-              <img src={asset.imageUrl} alt={asset.alt} />
+              <Image
+                src={asset.imageUrl}
+                alt={asset.alt}
+                width={640}
+                height={480}
+              />
               <div>
                 <span>{asset.word}</span>
                 <strong>{asset.title}</strong>

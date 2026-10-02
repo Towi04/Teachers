@@ -11,6 +11,7 @@ import {
   type TemplateId,
   type VocabularySet,
 } from "@/lib/content";
+import Image from "next/image";
 
 type FlashcardStudioProps = {
   initialSet: VocabularySet;
@@ -166,8 +167,12 @@ export function FlashcardStudio({ initialSet }: FlashcardStudioProps) {
                   ) : null}
                   <div className="flashcard-image-wrap">
                     {asset ? (
-                      // Plain img keeps the demo independent from remote image config.
-                      <img src={asset.imageUrl} alt={asset.alt} />
+                      <Image
+                        src={asset.imageUrl}
+                        alt={asset.alt}
+                        width={640}
+                        height={480}
+                      />
                     ) : null}
                   </div>
                   <div className="flashcard-body">
@@ -175,7 +180,7 @@ export function FlashcardStudio({ initialSet }: FlashcardStudioProps) {
                       <p className="word">{item.word}</p>
                       <p className="definition">{item.definition}</p>
                     </div>
-                    <p className="example">"{item.example}"</p>
+                    <p className="example">&ldquo;{item.example}&rdquo;</p>
                     <div className="asset-meta">
                       <span>{asset?.licenseStatus ?? "No asset"}</span>
                       <span>{reusableCount} reusable image option(s)</span>
