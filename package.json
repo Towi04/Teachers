@@ -1,0 +1,25 @@
+{
+  "name": "myownmaterials",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Printable-first teaching material generator for MyOwnMaterials.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "next": "^16.3.8",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^10.12.0",
+    "eslint-config-next": "^16.3.8",
+    "typescript": "^7.0.2"
+  }
+}
