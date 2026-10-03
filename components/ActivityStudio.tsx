@@ -208,7 +208,7 @@ export function ActivityStudio({
               <h3>{selectedActivity?.title}</h3>
             </div>
             <span className={canPublish ? "status-pill" : "status-pill warning"}>
-              {canPublish ? "Publish rules satisfied" : "Private only"}
+              {canPublish ? "Public ready" : "Private only"}
             </span>
           </div>
 

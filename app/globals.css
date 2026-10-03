@@ -645,6 +645,7 @@ main {
   align-items: center;
   border-bottom: 1px solid var(--line);
   display: flex;
+  gap: 1rem;
   justify-content: space-between;
   padding: 1.25rem;
 }
@@ -656,6 +657,8 @@ main {
 .status-pill {
   background: #dcfce7;
   color: var(--success);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .status-pill.warning {
