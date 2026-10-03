@@ -3549,6 +3549,850 @@ function BingoControls({
   );
 }
 
+function MemoryControls({
+  bulkText,
+  pairs,
+  setBulkText,
+  setPairs,
+  setSettings,
+  settings,
+}: {
+  bulkText: string;
+  pairs: MemoryPair[];
+  setBulkText: (text: string) => void;
+  setPairs: (pairs: MemoryPair[]) => void;
+  setSettings: (settings: MemorySettings) => void;
+  settings: MemorySettings;
+}) {
+  const [activeTab, setActiveTab] = useState<MemoryTab>("title");
+
+  const updateSettings = (updates: Partial<MemorySettings>) => {
+    setSettings({ ...settings, ...updates });
+  };
+  const updatePair = (
+    pairId: string,
+    field: keyof Omit<MemoryPair, "id">,
+    value: string,
+  ) => {
+    setPairs(
+      pairs.map((pair) => (pair.id === pairId ? { ...pair, [field]: value } : pair)),
+    );
+  };
+  const addPair = () => {
+    setPairs([
+      ...pairs,
+      {
+        id: `memory-custom-${pairs.length + 1}`,
+        word: "new word",
+        definition: "New definition",
+        translation: "",
+        customLeft: "Card A",
+        customRight: "Card B",
+        assetId: "run-park",
+      },
+    ]);
+  };
+  const removePair = (pairId: string) => {
+    if (pairs.length <= 1) {
+      setPairs([
+        {
+          id: "memory-empty",
+          word: "",
+          definition: "",
+          translation: "",
+          customLeft: "",
+          customRight: "",
+          assetId: "run-park",
+        },
+      ]);
+      return;
+    }
+
+    setPairs(pairs.filter((pair) => pair.id !== pairId));
+  };
+  const applyBulkText = (text: string) => {
+    const parsed = text
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line, index) => {
+        const [
+          word = "",
+          definition = "",
+          translation = "",
+          customLeft = "",
+          customRight = "",
+          assetId = "",
+        ] = parseCsvLine(line);
+
+        return {
+          id: `memory-bulk-${index}-${slugifyId(word || customLeft || "pair")}`,
+          word,
+          definition,
+          translation,
+          customLeft: customLeft || word,
+          customRight: customRight || definition || translation,
+          assetId: assetId || pairs[index % Math.max(pairs.length, 1)]?.assetId || "run-park",
+        };
+      })
+      .filter((pair) => pair.word.trim() || pair.customLeft.trim());
+
+    if (parsed.length > 0) {
+      setPairs(parsed);
+    }
+  };
+  const downloadCsvTemplate = () => {
+    const csv =
+      "word,definition,translation,custom left,custom right,assetId\nrun,To move quickly,correr,Action word,Running picture,run-park\n";
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "myownmaterials-memory-template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+  const uploadCsv = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const text = await file.text();
+    const withoutHeader = text.replace(
+      /^word,definition,translation,custom left,custom right,assetId\r?\n/i,
+      "",
+    );
+    setBulkText(withoutHeader.trim());
+    applyBulkText(withoutHeader);
+    event.target.value = "";
+  };
+
+  return (
+    <div className="tabbed-config memory-config">
+      <div className="tab-list" role="tablist" aria-label="Memory card settings">
+        {([
+          ["title", "Title"],
+          ["pairs", "Pairs"],
+          ["faces", "Card faces"],
+          ["back", "Back design"],
+          ["page", "Page"],
+          ["answer", "Answer key"],
+        ] as const).map(([tab, label]) => (
+          <button
+            aria-selected={activeTab === tab}
+            className={activeTab === tab ? "active" : ""}
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            role="tab"
+            type="button"
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="tab-panel" role="tabpanel">
+        {activeTab === "title" ? (
+          <>
+            <label className="field-stack">
+              <span>Activity title</span>
+              <input
+                onChange={(event) => updateSettings({ title: event.target.value })}
+                placeholder="Classroom actions memory"
+                type="text"
+                value={settings.title}
+              />
+            </label>
+            <label className="field-stack">
+              <span>Student instructions</span>
+              <textarea
+                onChange={(event) => updateSettings({ instructions: event.target.value })}
+                rows={4}
+                value={settings.instructions}
+              />
+            </label>
+            <p className="policy-note">
+              The preview keeps the game printable-first: cards, backs, cut guides, and a
+              teacher guide can all be printed from the browser.
+            </p>
+          </>
+        ) : null}
+
+        {activeTab === "pairs" ? (
+          <>
+            <div className="csv-actions">
+              <button className="secondary-button" onClick={downloadCsvTemplate} type="button">
+                Download CSV template
+              </button>
+              <label className="secondary-button file-button">
+                Upload CSV
+                <input accept=".csv,text/csv" onChange={uploadCsv} type="file" />
+              </label>
+            </div>
+            <label className="field-stack">
+              <span>Paste CSV rows</span>
+              <textarea
+                onBlur={() => applyBulkText(bulkText)}
+                onChange={(event) => setBulkText(event.target.value)}
+                placeholder="word,definition,translation,custom left,custom right,assetId"
+                rows={5}
+                value={bulkText}
+              />
+            </label>
+            <div className="editable-table memory-pair-table">
+              {pairs.map((pair) => (
+                <div className="editable-row memory-pair-row" key={pair.id}>
+                  <input
+                    aria-label="Word"
+                    onChange={(event) => updatePair(pair.id, "word", event.target.value)}
+                    placeholder="Word"
+                    value={pair.word}
+                  />
+                  <input
+                    aria-label="Definition"
+                    onChange={(event) =>
+                      updatePair(pair.id, "definition", event.target.value)
+                    }
+                    placeholder="Definition"
+                    value={pair.definition}
+                  />
+                  <input
+                    aria-label="Translation"
+                    onChange={(event) =>
+                      updatePair(pair.id, "translation", event.target.value)
+                    }
+                    placeholder="Translation"
+                    value={pair.translation}
+                  />
+                  <input
+                    aria-label="Custom left card"
+                    onChange={(event) =>
+                      updatePair(pair.id, "customLeft", event.target.value)
+                    }
+                    placeholder="Custom left"
+                    value={pair.customLeft}
+                  />
+                  <input
+                    aria-label="Custom right card"
+                    onChange={(event) =>
+                      updatePair(pair.id, "customRight", event.target.value)
+                    }
+                    placeholder="Custom right"
+                    value={pair.customRight}
+                  />
+                  <input
+                    aria-label="Image asset id"
+                    onChange={(event) => updatePair(pair.id, "assetId", event.target.value)}
+                    placeholder="Asset id"
+                    value={pair.assetId}
+                  />
+                  <button
+                    className="icon-button"
+                    onClick={() => removePair(pair.id)}
+                    type="button"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button className="secondary-button" onClick={addPair} type="button">
+              Add memory pair
+            </button>
+          </>
+        ) : null}
+
+        {activeTab === "faces" ? (
+          <>
+            <h4>Pair type</h4>
+            <div className="template-list">
+              {memoryPairTypeOptions.map((option) => (
+                <button
+                  className={
+                    settings.pairType === option.key
+                      ? "template-option active"
+                      : "template-option"
+                  }
+                  key={option.key}
+                  onClick={() => updateSettings({ pairType: option.key })}
+                  type="button"
+                >
+                  <strong>{option.label}</strong>
+                  <small>{option.description}</small>
+                </button>
+              ))}
+            </div>
+            <h4>Card generation</h4>
+            <div className="segmented">
+              <button
+                className={settings.duplicateMode === "single" ? "active" : ""}
+                onClick={() => updateSettings({ duplicateMode: "single" })}
+                type="button"
+              >
+                One pair set
+              </button>
+              <button
+                className={settings.duplicateMode === "double" ? "active" : ""}
+                onClick={() => updateSettings({ duplicateMode: "double" })}
+                type="button"
+              >
+                Duplicate pairs
+              </button>
+            </div>
+            <button
+              className={settings.shuffleCards ? "toggle-row active" : "toggle-row"}
+              onClick={() => updateSettings({ shuffleCards: !settings.shuffleCards })}
+              type="button"
+            >
+              Shuffle cards deterministically
+            </button>
+            <button
+              className={settings.showPairLabels ? "toggle-row active" : "toggle-row"}
+              onClick={() => updateSettings({ showPairLabels: !settings.showPairLabels })}
+              type="button"
+            >
+              Show pair labels on cards
+            </button>
+          </>
+        ) : null}
+
+        {activeTab === "back" ? (
+          <>
+            <h4>Front design</h4>
+            <ColorPalette
+              colors={backgroundColors}
+              label="Front background"
+              selectedColor={settings.frontBackgroundColor}
+              onSelect={(frontBackgroundColor) => updateSettings({ frontBackgroundColor })}
+            />
+            <ColorPalette
+              colors={frameColors}
+              label="Front border"
+              selectedColor={settings.borderColor}
+              onSelect={(borderColor) => updateSettings({ borderColor })}
+            />
+            <ColorPalette
+              colors={textColors}
+              label="Front text"
+              selectedColor={settings.textColor}
+              onSelect={(textColor) => updateSettings({ textColor })}
+            />
+            <h4>Back pattern</h4>
+            <div className="segmented four">
+              {memoryBackPatternOptions.map((option) => (
+                <button
+                  className={settings.backPattern === option.key ? "active" : ""}
+                  key={option.key}
+                  onClick={() => updateSettings({ backPattern: option.key })}
+                  type="button"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <ColorPalette
+              colors={["#ca8a04", "#f97316", "#2563eb", "#7c3aed", "#111827"]}
+              label="Back color"
+              selectedColor={settings.backColor}
+              onSelect={(backColor) => updateSettings({ backColor })}
+            />
+            <ColorPalette
+              colors={["#fef3c7", "#ffffff", "#dbeafe", "#fce7f3", "#e2e8f0"]}
+              label="Pattern color"
+              selectedColor={settings.backPatternColor}
+              onSelect={(backPatternColor) => updateSettings({ backPatternColor })}
+            />
+            <button
+              className={settings.showBackLogo ? "toggle-row active" : "toggle-row"}
+              onClick={() => updateSettings({ showBackLogo: !settings.showBackLogo })}
+              type="button"
+            >
+              Show school logo placeholder on backs
+            </button>
+            <h4>Typography and corners</h4>
+            <div className="segmented three">
+              {(["rounded", "classic", "bold"] as FontStyle[]).map((font) => (
+                <button
+                  className={settings.fontStyle === font ? "active" : ""}
+                  key={font}
+                  onClick={() => updateSettings({ fontStyle: font })}
+                  type="button"
+                >
+                  {font}
+                </button>
+              ))}
+            </div>
+            <div className="segmented">
+              <button
+                className={settings.cornerStyle === "rounded" ? "active" : ""}
+                onClick={() => updateSettings({ cornerStyle: "rounded" })}
+                type="button"
+              >
+                Rounded corners
+              </button>
+              <button
+                className={settings.cornerStyle === "square" ? "active" : ""}
+                onClick={() => updateSettings({ cornerStyle: "square" })}
+                type="button"
+              >
+                Square corners
+              </button>
+            </div>
+          </>
+        ) : null}
+
+        {activeTab === "page" ? (
+          <>
+            <h4>Card size</h4>
+            <div className="segmented three">
+              {memoryCardSizeOptions.map((option) => (
+                <button
+                  className={settings.cardSize === option.key ? "active" : ""}
+                  key={option.key}
+                  onClick={() => updateSettings({ cardSize: option.key })}
+                  type="button"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <h4>Cards per page</h4>
+            <div className="segmented four">
+              {memoryCardsPerPageOptions.map((count) => (
+                <button
+                  className={settings.cardsPerPage === count ? "active" : ""}
+                  key={count}
+                  onClick={() => updateSettings({ cardsPerPage: count })}
+                  type="button"
+                >
+                  {count}
+                </button>
+              ))}
+            </div>
+            <h4>Sheet</h4>
+            <div className="segmented">
+              <button
+                className={settings.orientation === "portrait" ? "active" : ""}
+                onClick={() => updateSettings({ orientation: "portrait" })}
+                type="button"
+              >
+                Portrait
+              </button>
+              <button
+                className={settings.orientation === "landscape" ? "active" : ""}
+                onClick={() => updateSettings({ orientation: "landscape" })}
+                type="button"
+              >
+                Landscape
+              </button>
+            </div>
+            <div className="sheet-size-list">
+              {(["letter", "a4", "legal"] as SheetSize[]).map((size) => (
+                <button
+                  className={settings.sheetSize === size ? "plan-option active" : "plan-option"}
+                  key={size}
+                  onClick={() => updateSettings({ sheetSize: size })}
+                  type="button"
+                >
+                  <strong>{size.toUpperCase()}</strong>
+                  <small>{size === "letter" ? "US classrooms" : "Printable page"}</small>
+                </button>
+              ))}
+            </div>
+            <button
+              className={settings.cutLines ? "toggle-row active" : "toggle-row"}
+              onClick={() => updateSettings({ cutLines: !settings.cutLines })}
+              type="button"
+            >
+              Show cut lines
+            </button>
+          </>
+        ) : null}
+
+        {activeTab === "answer" ? (
+          <>
+            <button
+              className={settings.showTeacherGuide ? "toggle-row active" : "toggle-row"}
+              onClick={() =>
+                updateSettings({ showTeacherGuide: !settings.showTeacherGuide })
+              }
+              type="button"
+            >
+              Include teacher answer key / guide
+            </button>
+            <p className="policy-note">
+              The teacher guide lists each generated pair and shows which two faces belong
+              together. Turn it off for student-only printing.
+            </p>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function MemoryControls({
+  bulkText,
+  pairs,
+  setBulkText,
+  setPairs,
+  setSettings,
+  settings,
+}: {
+  bulkText: string;
+  pairs: MemoryPair[];
+  setBulkText: (text: string) => void;
+  setPairs: (pairs: MemoryPair[]) => void;
+  setSettings: (settings: MemorySettings) => void;
+  settings: MemorySettings;
+}) {
+  const [activeTab, setActiveTab] = useState<MemoryTab>("title");
+  const updateSettings = (updates: Partial<MemorySettings>) => {
+    setSettings({ ...settings, ...updates });
+  };
+  const updatePair = (
+    pairId: string,
+    field: keyof Omit<MemoryPair, "id">,
+    value: string,
+  ) => {
+    setPairs(
+      pairs.map((pair) => (pair.id === pairId ? { ...pair, [field]: value } : pair)),
+    );
+  };
+  const applyBulkText = (text: string) => {
+    const parsed = text
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line, index) => {
+        const [
+          word = "",
+          definition = "",
+          translation = "",
+          customLeft = "",
+          customRight = "",
+          assetId = "",
+        ] = parseCsvLine(line);
+
+        return {
+          id: `memory-${index}-${slugifyId(word || customLeft || "pair")}`,
+          word,
+          definition,
+          translation,
+          customLeft: customLeft || word,
+          customRight: customRight || definition,
+          assetId: assetId || pairs[index % Math.max(pairs.length, 1)]?.assetId || "run-park",
+        };
+      })
+      .filter((pair) => pair.word || pair.definition || pair.customLeft || pair.customRight);
+
+    if (parsed.length > 0) {
+      setPairs(parsed);
+    }
+  };
+  const downloadCsvTemplate = () => {
+    const csv =
+      "word,definition,translation,customLeft,customRight,imageAssetId\nrun,To move quickly,correr,run,move quickly,run-park\n";
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "myownmaterials-memory-template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+  const uploadCsv = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const text = await file.text();
+    const withoutHeader = text.replace(
+      /^word,definition,translation,customLeft,customRight,imageAssetId\r?\n/i,
+      "",
+    );
+    setBulkText(withoutHeader.trim());
+    applyBulkText(withoutHeader);
+    event.target.value = "";
+  };
+  const addPairRow = () => {
+    setPairs([
+      ...pairs,
+      {
+        id: `memory-custom-${pairs.length + 1}`,
+        word: "new word",
+        definition: "Custom match",
+        translation: "",
+        customLeft: "new word",
+        customRight: "custom match",
+        assetId: "run-park",
+      },
+    ]);
+  };
+
+  return (
+    <div className="tabbed-config">
+      <div className="tab-list" role="tablist" aria-label="Memory card settings">
+        {([
+          ["title", "Title"],
+          ["pairs", "Pairs"],
+          ["faces", "Faces"],
+          ["back", "Back"],
+          ["page", "Page"],
+          ["answer", "Teacher guide"],
+        ] as const).map(([tab, label]) => (
+          <button
+            aria-selected={activeTab === tab}
+            className={activeTab === tab ? "active" : ""}
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            role="tab"
+            type="button"
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="tab-panel" role="tabpanel">
+        {activeTab === "title" ? (
+          <>
+            <label className="field-stack">
+              <span>Memory card title</span>
+              <input
+                onChange={(event) => updateSettings({ title: event.target.value })}
+                value={settings.title}
+              />
+            </label>
+            <label className="field-stack">
+              <span>Student instructions</span>
+              <textarea
+                onChange={(event) => updateSettings({ instructions: event.target.value })}
+                rows={4}
+                value={settings.instructions}
+              />
+            </label>
+          </>
+        ) : null}
+
+        {activeTab === "pairs" ? (
+          <>
+            <div className="csv-actions">
+              <button className="secondary-button" onClick={downloadCsvTemplate} type="button">
+                Download CSV template
+              </button>
+              <label className="secondary-button file-button">
+                Upload CSV
+                <input accept=".csv,text/csv" onChange={uploadCsv} type="file" />
+              </label>
+            </div>
+            <label className="field-stack">
+              <span>Paste CSV rows</span>
+              <textarea
+                onBlur={() => applyBulkText(bulkText)}
+                onChange={(event) => setBulkText(event.target.value)}
+                rows={5}
+                value={bulkText}
+              />
+            </label>
+            <div className="editable-table">
+              {pairs.slice(0, 12).map((pair) => (
+                <div className="editable-row" key={pair.id}>
+                  <input
+                    aria-label="Word"
+                    onChange={(event) => updatePair(pair.id, "word", event.target.value)}
+                    value={pair.word}
+                  />
+                  <input
+                    aria-label="Definition"
+                    onChange={(event) =>
+                      updatePair(pair.id, "definition", event.target.value)
+                    }
+                    value={pair.definition}
+                  />
+                  <input
+                    aria-label="Translation"
+                    onChange={(event) =>
+                      updatePair(pair.id, "translation", event.target.value)
+                    }
+                    placeholder="Translation"
+                    value={pair.translation}
+                  />
+                  <input
+                    aria-label="Custom right card"
+                    onChange={(event) =>
+                      updatePair(pair.id, "customRight", event.target.value)
+                    }
+                    placeholder="Custom right"
+                    value={pair.customRight}
+                  />
+                </div>
+              ))}
+            </div>
+            <button className="secondary-button" onClick={addPairRow} type="button">
+              Add pair row
+            </button>
+          </>
+        ) : null}
+
+        {activeTab === "faces" ? (
+          <>
+            <h4>Pair type</h4>
+            <div className="template-list">
+              {memoryPairTypeOptions.map((option) => (
+                <button
+                  className={
+                    settings.pairType === option.key
+                      ? "template-option active"
+                      : "template-option"
+                  }
+                  key={option.key}
+                  onClick={() => updateSettings({ pairType: option.key })}
+                  type="button"
+                >
+                  <strong>{option.label}</strong>
+                  <small>{option.description}</small>
+                </button>
+              ))}
+            </div>
+            <div className="segmented">
+              <button
+                className={settings.duplicateMode === "single" ? "active" : ""}
+                onClick={() => updateSettings({ duplicateMode: "single" })}
+                type="button"
+              >
+                Single set
+              </button>
+              <button
+                className={settings.duplicateMode === "double" ? "active" : ""}
+                onClick={() => updateSettings({ duplicateMode: "double" })}
+                type="button"
+              >
+                Duplicate set
+              </button>
+            </div>
+            <button
+              className={settings.showPairLabels ? "toggle-row active" : "toggle-row"}
+              onClick={() => updateSettings({ showPairLabels: !settings.showPairLabels })}
+              type="button"
+            >
+              Show pair labels
+            </button>
+          </>
+        ) : null}
+
+        {activeTab === "back" ? (
+          <>
+            <ColorPalette
+              colors={frameColors}
+              label="Back"
+              selectedColor={settings.backColor}
+              onSelect={(backColor) => updateSettings({ backColor })}
+            />
+            <ColorPalette
+              colors={backgroundColors}
+              label="Pattern"
+              selectedColor={settings.backPatternColor}
+              onSelect={(backPatternColor) => updateSettings({ backPatternColor })}
+            />
+            <h4>Pattern</h4>
+            <div className="segmented four">
+              {memoryBackPatternOptions.map((option) => (
+                <button
+                  className={settings.backPattern === option.key ? "active" : ""}
+                  key={option.key}
+                  onClick={() => updateSettings({ backPattern: option.key })}
+                  type="button"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <button
+              className={settings.showBackLogo ? "toggle-row active" : "toggle-row"}
+              onClick={() => updateSettings({ showBackLogo: !settings.showBackLogo })}
+              type="button"
+            >
+              Show back logo placeholder
+            </button>
+          </>
+        ) : null}
+
+        {activeTab === "page" ? (
+          <>
+            <h4>Cards per page</h4>
+            <div className="segmented four">
+              {memoryCardsPerPageOptions.map((count) => (
+                <button
+                  className={settings.cardsPerPage === count ? "active" : ""}
+                  key={count}
+                  onClick={() => updateSettings({ cardsPerPage: count })}
+                  type="button"
+                >
+                  {count}
+                </button>
+              ))}
+            </div>
+            <h4>Card size</h4>
+            <div className="segmented three">
+              {memoryCardSizeOptions.map((option) => (
+                <button
+                  className={settings.cardSize === option.key ? "active" : ""}
+                  key={option.key}
+                  onClick={() => updateSettings({ cardSize: option.key })}
+                  type="button"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <h4>Sheet</h4>
+            <div className="segmented">
+              <button
+                className={settings.orientation === "portrait" ? "active" : ""}
+                onClick={() => updateSettings({ orientation: "portrait" })}
+                type="button"
+              >
+                Portrait
+              </button>
+              <button
+                className={settings.orientation === "landscape" ? "active" : ""}
+                onClick={() => updateSettings({ orientation: "landscape" })}
+                type="button"
+              >
+                Landscape
+              </button>
+            </div>
+          </>
+        ) : null}
+
+        {activeTab === "answer" ? (
+          <>
+            <button
+              className={settings.showTeacherGuide ? "toggle-row active" : "toggle-row"}
+              onClick={() =>
+                updateSettings({ showTeacherGuide: !settings.showTeacherGuide })
+              }
+              type="button"
+            >
+              Include teacher guide
+            </button>
+            <button
+              className={settings.cutLines ? "toggle-row active" : "toggle-row"}
+              onClick={() => updateSettings({ cutLines: !settings.cutLines })}
+              type="button"
+            >
+              Show cut lines
+            </button>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function SideSettingsControls({
   label,
   settings,
@@ -4037,6 +4881,255 @@ function positiveModulo(value: number, modulo: number) {
   return ((value % modulo) + modulo) % modulo;
 }
 
+function buildBingoBoard(
+  items: EditableVocabularyItem[],
+  settings: BingoSettings,
+  boardIndex = 0,
+): BingoBoardCell[] {
+  const usableItems = items.filter((item) => item.word.trim());
+  const cellsCount = settings.boardSize * settings.boardSize;
+  const freeIndex = settings.freeSpace
+    ? Math.floor(settings.boardSize / 2) * settings.boardSize +
+      Math.floor(settings.boardSize / 2)
+    : -1;
+  const orderedItems = settings.randomizeBoards
+    ? deterministicShuffle(
+        usableItems,
+        `${settings.title}-${settings.boardSize}-${boardIndex}-${usableItems
+          .map((item) => item.word)
+          .join("|")}`,
+      )
+    : usableItems;
+
+  let itemIndex = 0;
+
+  return Array.from({ length: cellsCount }, (_, cellIndex) => {
+    if (cellIndex === freeIndex) {
+      return {
+        assetId: "",
+        id: "free-space",
+        isFree: true,
+        label: settings.freeSpaceLabel || "FREE",
+        subLabel: "Free space",
+      };
+    }
+
+    const sourceItem =
+      orderedItems[itemIndex % Math.max(orderedItems.length, 1)] ?? items[0];
+    itemIndex += 1;
+
+    return {
+      assetId: sourceItem?.assetId ?? "",
+      id: sourceItem ? `${sourceItem.id}-${cellIndex}` : `empty-${cellIndex}`,
+      isFree: false,
+      label: sourceItem?.word || "Add item",
+      subLabel: sourceItem?.definition || "Caller clue",
+    };
+  });
+}
+
+function deterministicShuffle<T>(items: T[], seedSource: string) {
+  const shuffled = [...items];
+  let seed = hashString(seedSource || "bingo");
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    seed = positiveModulo(seed * 1103515245 + 12345, 2147483647);
+    const swapIndex = positiveModulo(seed, index + 1);
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+
+  return shuffled;
+}
+
+function getMatchingPreviewSides(
+  pair: MatchingPair,
+  matchMode: MatchingMode,
+  index: number,
+): { left: MatchingPreviewSide; right: MatchingPreviewSide } {
+  const resolvedMode =
+    matchMode === "mixed"
+      ? (["word-definition", "image-word", "word-translation", "sentence-word"] as const)[
+          index % 4
+        ]
+      : matchMode;
+  const word = pair.word || "Word";
+  const definition = pair.definition || `Definition for ${word}`;
+  const translation = pair.translation || `Translation for ${word}`;
+  const sentence = pair.sentence || `Example sentence for ${word}.`;
+  const base = {
+    assetId: pair.assetId,
+    pairId: pair.id,
+  };
+
+  if (resolvedMode === "image-word") {
+    return {
+      left: { ...base, kind: "image", text: word },
+      right: { ...base, kind: "word", text: word },
+    };
+  }
+
+  if (resolvedMode === "word-translation") {
+    return {
+      left: { ...base, kind: "word", text: word },
+      right: { ...base, kind: "translation", text: translation },
+    };
+  }
+
+  if (resolvedMode === "sentence-word") {
+    return {
+      left: { ...base, kind: "sentence", text: sentence },
+      right: { ...base, kind: "word", text: word },
+    };
+  }
+
+  return {
+    left: { ...base, kind: "word", text: word },
+    right: { ...base, kind: "definition", text: definition },
+  };
+}
+
+function orderMatchingPreviewSides<T extends MatchingPreviewSide>(
+  items: T[],
+  seed: string,
+  shouldShuffle: boolean,
+) {
+  if (!shouldShuffle) {
+    return items;
+  }
+
+  return [...items].sort((a, b) => {
+    const aHash = hashString(`${seed}-${a.pairId}-${a.kind}`);
+    const bHash = hashString(`${seed}-${b.pairId}-${b.kind}`);
+    return aHash - bHash;
+  });
+}
+
+function letterForIndex(index: number) {
+  return String.fromCharCode(65 + positiveModulo(index, 26));
+}
+
+function getMemoryFaceKinds(pairType: MemoryPairType): [MemoryFaceKind, MemoryFaceKind] {
+  if (pairType === "word-image") {
+    return ["word", "image"];
+  }
+
+  if (pairType === "word-translation") {
+    return ["word", "translation"];
+  }
+
+  if (pairType === "image-definition") {
+    return ["image", "definition"];
+  }
+
+  if (pairType === "custom") {
+    return ["custom", "custom"];
+  }
+
+  return ["word", "definition"];
+}
+
+function buildMemoryCards(
+  pairs: MemoryPair[],
+  settings: MemorySettings,
+): MemoryCardPreviewItem[] {
+  const faceKinds = getMemoryFaceKinds(settings.pairType);
+  const usablePairs = pairs.filter(
+    (pair) => pair.word.trim() || pair.definition.trim() || pair.customLeft.trim(),
+  );
+  const copyCount = settings.duplicateMode === "double" ? 2 : 1;
+  const cards: MemoryCardPreviewItem[] = [];
+
+  usablePairs.forEach((pair, pairIndex) => {
+    const pairLabel = getMemoryPairLabel(pairIndex);
+
+    for (let copyIndex = 0; copyIndex < copyCount; copyIndex += 1) {
+      faceKinds.forEach((kind, faceIndex) => {
+        const face = getMemoryFaceContent(pair, kind, faceIndex);
+        cards.push({
+          ...face,
+          id: `${pair.id}-${copyIndex}-${faceIndex}`,
+          pairLabel,
+        });
+      });
+    }
+  });
+
+  if (!settings.shuffleCards) {
+    return cards;
+  }
+
+  return [...cards].sort((first, second) => {
+    const firstHash = hashString(`${settings.pairType}-${first.id}-${first.content}`);
+    const secondHash = hashString(`${settings.pairType}-${second.id}-${second.content}`);
+
+    return firstHash - secondHash;
+  });
+}
+
+function getMemoryFaceContent(
+  pair: MemoryPair,
+  kind: MemoryFaceKind,
+  faceIndex: number,
+): Omit<MemoryCardPreviewItem, "id" | "pairLabel"> {
+  if (kind === "image") {
+    return {
+      assetId: pair.assetId,
+      content: pair.word || "Picture card",
+      faceLabel: "Image",
+      kind,
+      subContent: pair.definition,
+    };
+  }
+
+  if (kind === "definition") {
+    return {
+      assetId: pair.assetId,
+      content: pair.definition || "Definition",
+      faceLabel: "Definition",
+      kind,
+      subContent: pair.word,
+    };
+  }
+
+  if (kind === "translation") {
+    return {
+      assetId: pair.assetId,
+      content: pair.translation || "Translation",
+      faceLabel: "Translation",
+      kind,
+      subContent: pair.word,
+    };
+  }
+
+  if (kind === "custom") {
+    return {
+      assetId: pair.assetId,
+      content:
+        faceIndex === 0
+          ? pair.customLeft || pair.word || "Custom A"
+          : pair.customRight || pair.definition || "Custom B",
+      faceLabel: faceIndex === 0 ? "Custom A" : "Custom B",
+      kind,
+      subContent: pair.word && pair.definition ? `${pair.word} / ${pair.definition}` : "",
+    };
+  }
+
+  return {
+    assetId: pair.assetId,
+    content: pair.word || "Word",
+    faceLabel: "Word",
+    kind,
+    subContent: pair.definition,
+  };
+}
+
+function getMemoryPairLabel(index: number) {
+  const letter = String.fromCharCode(65 + positiveModulo(index, 26));
+  const suffix = index >= 26 ? String(Math.floor(index / 26) + 1) : "";
+
+  return `${letter}${suffix}`;
+}
+
 function LockedOption({
   enabled,
   label,
@@ -4510,6 +5603,177 @@ function WordSearchPreview({
   );
 }
 
+function BingoPreview({
+  items,
+  settings,
+}: {
+  items: EditableVocabularyItem[];
+  settings: BingoSettings;
+}) {
+  const previewItems = useMemo(
+    () => items.filter((item) => item.word.trim()).slice(0, 36),
+    [items],
+  );
+  const boardCells = useMemo(
+    () => buildBingoBoard(previewItems, settings, 0),
+    [previewItems, settings],
+  );
+  const callerItems = previewItems.slice(0, 18);
+
+  return (
+    <div className="sheet-preview-stack bingo-preview-stack">
+      <section className={`bingo-page sheet-${settings.sheetSize} ${settings.orientation}`}>
+        <div className="preview-side-label">
+          <span>Bingo board preview</span>
+          <small>
+            {settings.boardSize} x {settings.boardSize} · {settings.boardCount} boards
+          </small>
+        </div>
+        <article
+          className={`bingo-sheet font-${settings.fontStyle} cards-${settings.cardsPerPage} ${
+            settings.cutLines ? "with-cut-lines" : ""
+          }`}
+          style={
+            {
+              "--bingo-accent": settings.accentColor,
+              "--bingo-bg": settings.backgroundColor,
+              "--bingo-border": settings.borderColor,
+              "--bingo-grid-size": settings.boardSize,
+              "--bingo-text": settings.textColor,
+            } as React.CSSProperties
+          }
+        >
+          <header className="bingo-header">
+            <div>
+              <p className="eyebrow">Vocabulary bingo</p>
+              <h2>{settings.title}</h2>
+              <p>{settings.headerInstructions}</p>
+            </div>
+            <div className="bingo-meta">
+              <span>{settings.sheetSize.toUpperCase()}</span>
+              <span>{settings.orientation}</span>
+            </div>
+          </header>
+
+          <div className="bingo-main">
+            <div
+              className="bingo-board"
+              aria-label={`${settings.boardSize} by ${settings.boardSize} bingo board`}
+            >
+              {boardCells.map((cell) => {
+                const asset = getAsset(cell.assetId);
+                const showImage =
+                  !cell.isFree &&
+                  asset &&
+                  (settings.displayMode === "images" ||
+                    settings.displayMode === "both");
+                const showLabel =
+                  cell.isFree ||
+                  settings.displayMode === "words" ||
+                  settings.displayMode === "both" ||
+                  !asset;
+
+                return (
+                  <div
+                    className={cell.isFree ? "bingo-cell free" : "bingo-cell"}
+                    key={cell.id}
+                  >
+                    {showImage ? (
+                      <div className="bingo-cell-image">
+                        <Image
+                          src={asset.imageUrl}
+                          alt={asset.alt}
+                          fill
+                          sizes="120px"
+                          style={{ objectFit: "cover" }}
+                        />
+                      </div>
+                    ) : null}
+                    {showLabel ? <strong>{cell.label}</strong> : null}
+                    {settings.displayMode === "both" && !cell.isFree ? (
+                      <small>{cell.subLabel}</small>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+
+            {settings.showItemBank ? (
+              <aside className="bingo-item-bank">
+                <h3>Item bank</h3>
+                <div>
+                  {callerItems.slice(0, 12).map((item) => (
+                    <span key={`${item.id}-bank`}>{item.word}</span>
+                  ))}
+                </div>
+              </aside>
+            ) : null}
+          </div>
+
+          <footer className="bingo-footer">
+            <p>{settings.footerInstructions}</p>
+            <span>
+              Sample board 1 of {settings.boardCount} ·{" "}
+              {settings.randomizeBoards ? "randomized" : "list order"}
+            </span>
+          </footer>
+
+          {settings.includeCallList || settings.includeCallerCards ? (
+            <section className="bingo-caller-section">
+              {settings.includeCallList ? (
+                <div className="bingo-call-list">
+                  <h3>Call list</h3>
+                  <ol>
+                    {callerItems.slice(0, 10).map((item) => (
+                      <li key={`${item.id}-call-list`}>{item.word}</li>
+                    ))}
+                  </ol>
+                </div>
+              ) : null}
+
+              {settings.includeCallerCards ? (
+                <div className="bingo-caller-cards">
+                  <h3>Caller cards</h3>
+                  <div>
+                    {callerItems.slice(0, 8).map((item) => {
+                      const asset = getAsset(item.assetId);
+
+                      return (
+                        <article key={`${item.id}-caller-card`}>
+                          {asset ? (
+                            <div>
+                              <Image
+                                src={asset.imageUrl}
+                                alt={asset.alt}
+                                fill
+                                sizes="80px"
+                                style={{ objectFit: "cover" }}
+                              />
+                            </div>
+                          ) : null}
+                          <strong>{item.word}</strong>
+                          <small>{item.definition || "Call this item"}</small>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+        </article>
+      </section>
+      <div className="full-preview-note">
+        <strong>{settings.title}</strong>
+        <span>
+          Deterministic preview uses the current item list, board size, randomization,
+          free-space, display, caller-card, and page settings.
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function QuizPreview({
   materialTitle,
   questions,
@@ -4642,6 +5906,411 @@ function QuizPreview({
         </span>
       </div>
     </div>
+  );
+}
+
+type MatchingPreviewSide = {
+  assetId: string;
+  kind: "word" | "definition" | "translation" | "sentence" | "image";
+  pairId: string;
+  text: string;
+};
+
+function MatchingPreview({
+  pairs,
+  settings,
+  title,
+}: {
+  pairs: MatchingPair[];
+  settings: MatchingSettings;
+  title: string;
+}) {
+  const previewPairs = useMemo(
+    () =>
+      pairs
+        .filter(
+          (pair) =>
+            pair.word.trim() ||
+            pair.definition.trim() ||
+            pair.translation.trim() ||
+            pair.sentence.trim(),
+        )
+        .slice(0, Math.min(settings.pairsPerPage, 8)),
+    [pairs, settings.pairsPerPage],
+  );
+  const previewSides = useMemo(
+    () =>
+      previewPairs.map((pair, index) => ({
+        pair,
+        ...getMatchingPreviewSides(pair, settings.matchMode, index),
+      })),
+    [previewPairs, settings.matchMode],
+  );
+  const leftItems = useMemo(
+    () =>
+      orderMatchingPreviewSides(
+        previewSides.map((item) => item.left),
+        `${title}-${settings.matchMode}-left`,
+        settings.shuffleLeft,
+      ),
+    [previewSides, settings.matchMode, settings.shuffleLeft, title],
+  );
+  const rightItems = useMemo(
+    () =>
+      orderMatchingPreviewSides(
+        previewSides.map((item) => item.right),
+        `${title}-${settings.matchMode}-right`,
+        settings.shuffleRight,
+      ),
+    [previewSides, settings.matchMode, settings.shuffleRight, title],
+  );
+  const rightLetterByPair = useMemo(() => {
+    const letters = new Map<string, string>();
+    rightItems.forEach((item, index) => letters.set(item.pairId, letterForIndex(index)));
+    return letters;
+  }, [rightItems]);
+  const modeLabel =
+    matchingModeOptions.find((option) => option.key === settings.matchMode)?.label ??
+    "Matching";
+
+  return (
+    <div className="sheet-preview-stack matching-preview-stack">
+      <section className={`matching-page sheet-${settings.sheetSize} ${settings.orientation}`}>
+        <div className="preview-side-label">
+          <span>Matching preview</span>
+          <small>
+            {settings.outputStyle === "cut-out-cards" ? "cut-out cards" : "worksheet"} ·{" "}
+            {settings.orientation}
+          </small>
+        </div>
+        <article
+          className={[
+            "matching-sheet",
+            `font-${settings.fontStyle}`,
+            `matching-${settings.outputStyle}`,
+            `columns-${settings.columns}`,
+            `spacing-${settings.spacing}`,
+            `line-${settings.lineStyle}`,
+          ].join(" ")}
+          style={
+            {
+              "--matching-accent": settings.accentColor,
+              "--matching-bg": settings.backgroundColor,
+              "--matching-border": settings.borderColor,
+              "--matching-text": settings.textColor,
+            } as React.CSSProperties
+          }
+        >
+          <header className="matching-header">
+            <div>
+              <p className="eyebrow">{modeLabel}</p>
+              <h2>{title}</h2>
+              <p>{settings.instructions}</p>
+            </div>
+            <span>{settings.sheetSize.toUpperCase()}</span>
+          </header>
+
+          {settings.outputStyle === "worksheet-lines" ? (
+            <div className="matching-columns" aria-label="Matching worksheet columns">
+              <div className="matching-choice-column">
+                {leftItems.map((item, index) => (
+                  <MatchingChoiceCard
+                    item={item}
+                    key={`left-${item.pairId}`}
+                    label={settings.includeNumbering ? `${index + 1}` : undefined}
+                    settings={settings}
+                  />
+                ))}
+              </div>
+              <div className="matching-line-column" aria-hidden="true">
+                {leftItems.map((item) => (
+                  <span key={`line-${item.pairId}`} />
+                ))}
+              </div>
+              <div className="matching-choice-column">
+                {rightItems.map((item, index) => (
+                  <MatchingChoiceCard
+                    item={item}
+                    key={`right-${item.pairId}`}
+                    label={settings.includeNumbering ? letterForIndex(index) : undefined}
+                    settings={settings}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="matching-card-grid" aria-label="Cut-out matching cards">
+              {[...leftItems, ...rightItems].map((item, index) => (
+                <MatchingChoiceCard
+                  item={item}
+                  key={`${item.kind}-${item.pairId}-${index}`}
+                  label={
+                    settings.includeNumbering
+                      ? index < leftItems.length
+                        ? `${index + 1}`
+                        : letterForIndex(index - leftItems.length)
+                      : undefined
+                  }
+                  settings={settings}
+                />
+              ))}
+            </div>
+          )}
+
+          {settings.showAnswerKey ? (
+            <aside className="matching-answer-key">
+              <strong>Answer key</strong>
+              <div>
+                {leftItems.map((item, index) => (
+                  <span key={`answer-${item.pairId}`}>
+                    {index + 1}-{rightLetterByPair.get(item.pairId) ?? "?"}
+                  </span>
+                ))}
+              </div>
+            </aside>
+          ) : (
+            <div className="matching-answer-key muted">Student copy - answer key hidden</div>
+          )}
+        </article>
+      </section>
+      <div className="full-preview-note">
+        <strong>{title}</strong>
+        <span>
+          Preview uses the first {previewPairs.length} pair(s), deterministic shuffling,
+          and the current matching mode, layout, and design settings.
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function MatchingChoiceCard({
+  item,
+  label,
+  settings,
+}: {
+  item: MatchingPreviewSide;
+  label?: string;
+  settings: MatchingSettings;
+}) {
+  const asset = item.assetId ? getAsset(item.assetId) : undefined;
+  const showImage =
+    settings.includeImages &&
+    asset &&
+    (item.kind === "image" || item.kind === "word" || item.kind === "translation");
+
+  return (
+    <div className={`matching-choice-card kind-${item.kind}`}>
+      {label ? <span className="matching-choice-label">{label}</span> : null}
+      {showImage ? (
+        <div className={item.kind === "image" ? "matching-card-image" : "matching-card-thumb"}>
+          <Image
+            src={asset.imageUrl}
+            alt={asset.alt}
+            fill
+            sizes="(max-width: 900px) 120px, 180px"
+            style={{ objectFit: "cover" }}
+          />
+        </div>
+      ) : null}
+      <p>{item.text}</p>
+    </div>
+  );
+}
+
+function MemoryPreview({
+  pairs,
+  settings,
+}: {
+  pairs: MemoryPair[];
+  settings: MemorySettings;
+}) {
+  const cards = useMemo(() => buildMemoryCards(pairs, settings), [pairs, settings]);
+  const previewCards = cards.slice(0, Math.min(cards.length, settings.cardsPerPage));
+  const pairCount = pairs.filter(
+    (pair) => pair.word.trim() || pair.definition.trim() || pair.customLeft.trim(),
+  ).length;
+
+  return (
+    <div className="sheet-preview-stack memory-preview-stack">
+      <section className={`memory-page sheet-${settings.sheetSize} ${settings.orientation}`}>
+        <div className="preview-side-label">
+          <span>Card fronts</span>
+          <small>
+            {settings.cardsPerPage} per page · {settings.cardSize}
+          </small>
+        </div>
+        <article
+          className={`memory-sheet font-${settings.fontStyle} size-${settings.cardSize} corners-${settings.cornerStyle} ${
+            settings.cutLines ? "with-cut-lines" : ""
+          }`}
+          style={
+            {
+              "--memory-bg": settings.frontBackgroundColor,
+              "--memory-border": settings.borderColor,
+              "--memory-text": settings.textColor,
+            } as React.CSSProperties
+          }
+        >
+          <header className="memory-header">
+            <div>
+              <p className="eyebrow">Memory card game</p>
+              <h2>{settings.title || "Untitled memory cards"}</h2>
+              <p>{settings.instructions}</p>
+            </div>
+            <span>{pairCount} pair(s)</span>
+          </header>
+          <div className={`memory-card-grid cards-${settings.cardsPerPage}`}>
+            {previewCards.map((card) => (
+              <MemoryFaceCard
+                card={card}
+                key={card.id}
+                showPairLabels={settings.showPairLabels}
+              />
+            ))}
+          </div>
+          {settings.cutLines ? (
+            <p className="memory-cut-note">Dashed guides show where teachers cut the cards.</p>
+          ) : null}
+        </article>
+      </section>
+
+      <section className={`memory-page sheet-${settings.sheetSize} ${settings.orientation}`}>
+        <div className="preview-side-label">
+          <span>Card backs</span>
+          <small>
+            {settings.backPattern} · {settings.cornerStyle}
+          </small>
+        </div>
+        <article
+          className={`memory-sheet back-sheet size-${settings.cardSize} corners-${settings.cornerStyle} ${
+            settings.cutLines ? "with-cut-lines" : ""
+          }`}
+          style={
+            {
+              "--memory-back": settings.backColor,
+              "--memory-back-pattern": settings.backPatternColor,
+              "--memory-border": settings.borderColor,
+            } as React.CSSProperties
+          }
+        >
+          <div className={`memory-card-grid cards-${settings.cardsPerPage}`}>
+            {previewCards.map((card) => (
+              <MemoryBackCard cardId={card.id} key={`back-${card.id}`} settings={settings} />
+            ))}
+          </div>
+        </article>
+      </section>
+
+      {settings.showTeacherGuide ? (
+        <MemoryTeacherGuide pairs={pairs} settings={settings} />
+      ) : null}
+
+      <div className="full-preview-note">
+        <strong>{settings.title}</strong>
+        <span>
+          Preview updates from pair type, duplicate generation, shuffle, card design,
+          page layout, backs, and teacher-guide settings.
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function MemoryFaceCard({
+  card,
+  showPairLabels,
+}: {
+  card: MemoryCardPreviewItem;
+  showPairLabels: boolean;
+}) {
+  const asset = card.kind === "image" ? getAsset(card.assetId) : undefined;
+
+  return (
+    <article className={`memory-card face-${card.kind}`}>
+      <span className="memory-card-kicker">
+        {showPairLabels ? `Pair ${card.pairLabel} - ${card.faceLabel}` : card.faceLabel}
+      </span>
+      {card.kind === "image" ? (
+        asset ? (
+          <div className="memory-card-image">
+            <Image
+              alt={asset.alt}
+              fill
+              sizes="(max-width: 900px) 38vw, 180px"
+              src={asset.imageUrl}
+              style={{ objectFit: "cover" }}
+            />
+          </div>
+        ) : (
+          <div className="memory-image-placeholder">Image</div>
+        )
+      ) : (
+        <strong>{card.content}</strong>
+      )}
+      {card.kind === "image" ? <strong>{card.content}</strong> : null}
+      {card.subContent ? <small>{card.subContent}</small> : null}
+    </article>
+  );
+}
+
+function MemoryBackCard({
+  cardId,
+  settings,
+}: {
+  cardId: string;
+  settings: MemorySettings;
+}) {
+  return (
+    <article className={`memory-card memory-card-back pattern-${settings.backPattern}`}>
+      <span className="memory-back-mark">MM</span>
+      {settings.showBackLogo ? <small>School logo</small> : null}
+      <span className="sr-only">Back for card {cardId}</span>
+    </article>
+  );
+}
+
+function MemoryTeacherGuide({
+  pairs,
+  settings,
+}: {
+  pairs: MemoryPair[];
+  settings: MemorySettings;
+}) {
+  const faceKinds = getMemoryFaceKinds(settings.pairType);
+  const guidePairs = pairs
+    .filter((pair) => pair.word.trim() || pair.definition.trim() || pair.customLeft.trim())
+    .slice(0, 12);
+
+  return (
+    <section className="memory-teacher-guide">
+      <div className="preview-side-label">
+        <span>Teacher answer key</span>
+        <small>{settings.pairType}</small>
+      </div>
+      <div className="memory-guide-card">
+        <h3>{settings.title || "Memory cards"} guide</h3>
+        <ol>
+          {guidePairs.map((pair, index) => {
+            const left = getMemoryFaceContent(pair, faceKinds[0], 0);
+            const right = getMemoryFaceContent(pair, faceKinds[1], 1);
+
+            return (
+              <li key={`memory-guide-${pair.id}`}>
+                <strong>Pair {getMemoryPairLabel(index)}</strong>
+                <span>{left.content}</span>
+                <span>{right.content}</span>
+              </li>
+            );
+          })}
+        </ol>
+        <p>
+          {settings.duplicateMode === "double"
+            ? "Duplicate pair generation is on: print two copies of every matching pair."
+            : "Each row generates two cards: one left face and one right face."}
+        </p>
+      </div>
+    </section>
   );
 }
 

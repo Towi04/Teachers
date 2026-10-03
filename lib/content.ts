@@ -278,15 +278,15 @@ export const activityDefinitions: ActivityDefinition[] = [
     description:
       "Match words to images, definitions, translations, or examples.",
     icon: "MT",
-    status: "planned",
+    status: "next",
     inputType: "Pairs",
-    outputType: "Cut-out activity",
+    outputType: "Worksheet or cards",
     accent: "#16a34a",
     configurationHighlights: [
-      "Pair type",
-      "Cut lines",
-      "Image size",
-      "Student answer sheet",
+      "Match type",
+      "Cut-out or worksheet",
+      "Image pairs",
+      "Answer key",
     ],
   },
   {
@@ -346,7 +346,7 @@ export const activityDefinitions: ActivityDefinition[] = [
     description:
       "Format multiple-choice, true/false, or short-answer questions.",
     icon: "QZ",
-    status: "planned",
+    status: "next",
     inputType: "Question bank",
     outputType: "Assessment",
     accent: "#475569",
