@@ -857,6 +857,7 @@ main {
   border-radius: 1rem;
   color: var(--text-color, var(--ink));
   display: grid;
+  min-width: 0;
   min-height: 0;
   overflow: hidden;
   position: relative;
@@ -970,7 +971,9 @@ main {
   display: grid;
   align-content: center;
   gap: 0.45rem;
+  min-width: 0;
   min-height: 0;
+  overflow: hidden;
   padding: clamp(0.55rem, 1.3vw, 1rem);
   position: relative;
   z-index: 2;
@@ -1018,6 +1021,14 @@ main {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  min-width: 0;
+}
+
+.asset-meta span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .qr-row {
