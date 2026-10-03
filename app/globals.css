@@ -985,18 +985,25 @@ main {
   text-transform: capitalize;
 }
 
-.dotted-word {
-  background-image: radial-gradient(
-    circle,
-    var(--text-color, var(--ink)) 38%,
-    transparent 42%
-  );
-  background-position: 0 58%;
-  background-size: 0.18em 0.18em;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
+.dotted-word-svg {
+  display: block;
+  max-height: 4.2rem;
+  width: 100%;
+}
+
+.dotted-word-svg text {
+  fill: none;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  font-size: 56px;
+  font-weight: 1000;
+  letter-spacing: -0.04em;
+  stroke: var(--text-color, var(--ink));
+  stroke-dasharray: 1 9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2px;
 }
 
 .definition,

@@ -688,9 +688,11 @@ function FlashcardSheet({
               ) : null}
               <div className="flashcard-body">
                 {settings.content.word ? (
-                  <p className={settings.dottedWord ? "word dotted-word" : "word"}>
-                    {item.word}
-                  </p>
+                  settings.dottedWord ? (
+                    <DottedWord text={item.word} />
+                  ) : (
+                    <p className="word">{item.word}</p>
+                  )
                 ) : null}
                 {settings.content.definition ? (
                   <p className="definition">{item.definition}</p>
@@ -714,6 +716,21 @@ function FlashcardSheet({
         })}
       </div>
     </section>
+  );
+}
+
+function DottedWord({ text }: { text: string }) {
+  return (
+    <svg
+      aria-label={text}
+      className="dotted-word-svg"
+      role="img"
+      viewBox="0 0 420 90"
+    >
+      <text dominantBaseline="middle" textAnchor="middle" x="50%" y="54%">
+        {text}
+      </text>
+    </svg>
   );
 }
 
