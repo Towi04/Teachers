@@ -986,10 +986,17 @@ main {
 }
 
 .dotted-word {
+  background-image: radial-gradient(
+    circle,
+    var(--text-color, var(--ink)) 38%,
+    transparent 42%
+  );
+  background-position: 0 58%;
+  background-size: 0.18em 0.18em;
+  -webkit-background-clip: text;
+  background-clip: text;
   color: transparent;
-  -webkit-text-stroke: 1px var(--text-color, var(--ink));
-  text-decoration: underline dotted var(--text-color, var(--ink));
-  text-decoration-thickness: 2px;
+  -webkit-text-fill-color: transparent;
 }
 
 .definition,
