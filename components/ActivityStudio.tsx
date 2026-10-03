@@ -100,13 +100,11 @@ export function ActivityStudio({
         </>
       ) : (
         <div className="config-header no-print">
-          <button
-            className="back-link"
-            onClick={() => window.location.assign("/")}
-            type="button"
-          >
-            Back to all tools
-          </button>
+          <form action="/">
+            <button className="back-link" type="submit">
+              Back to all tools
+            </button>
+          </form>
           <p className="eyebrow">Configure activity</p>
           <h1>{selectedActivity?.title}</h1>
           <p>{selectedActivity?.description}</p>
