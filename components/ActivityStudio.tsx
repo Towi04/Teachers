@@ -7,9 +7,7 @@ import {
   canPublishSet,
   getAsset,
   getReusableAssetsForWord,
-  planTiers,
   type ActivityId,
-  type PlanTier,
   type VocabularySet,
 } from "@/lib/content";
 
@@ -19,11 +17,64 @@ type ActivityStudioProps = {
   showPicker?: boolean;
 };
 
-type CardSize = "small" | "medium" | "large";
+type CardsPerSheet = 1 | 2 | 3 | 4 | 6 | 8;
+type CardLayout = "stacked" | "side" | "text-first" | "image-only";
+type ContentKey = "word" | "definition" | "image" | "example" | "qr";
 type PrintSides = "front-only" | "double-sided";
 type FontStyle = "rounded" | "classic" | "bold";
+type Orientation = "portrait" | "landscape";
+type SheetSize = "letter" | "a4" | "legal";
+
+type FlashcardSideSettings = {
+  backgroundColor: string;
+  borderColor: string;
+  borderWidth: number;
+  textColor: string;
+  dottedWord: boolean;
+  content: Record<ContentKey, boolean>;
+};
 
 const frameColors = ["#f97316", "#2563eb", "#16a34a", "#db2777", "#111827"];
+const backgroundColors = ["#ffffff", "#fff7ed", "#fef3c7", "#dcfce7", "#dbeafe", "#fce7f3"];
+const textColors = ["#172033", "#1d4ed8", "#166534", "#be123c", "#7c2d12", "#ffffff"];
+const cardsPerSheetOptions: CardsPerSheet[] = [1, 2, 3, 4, 6, 8];
+const contentOptions: { key: ContentKey; label: string }[] = [
+  { key: "word", label: "Word" },
+  { key: "definition", label: "Definition" },
+  { key: "image", label: "Image" },
+  { key: "example", label: "Example sentence" },
+  { key: "qr", label: "Audio QR" },
+];
+
+const defaultFrontSettings: FlashcardSideSettings = {
+  backgroundColor: "#ffffff",
+  borderColor: "#f97316",
+  borderWidth: 3,
+  textColor: "#172033",
+  dottedWord: false,
+  content: {
+    word: true,
+    definition: false,
+    image: true,
+    example: false,
+    qr: true,
+  },
+};
+
+const defaultBackSettings: FlashcardSideSettings = {
+  backgroundColor: "#fff7ed",
+  borderColor: "#f97316",
+  borderWidth: 2,
+  textColor: "#172033",
+  dottedWord: false,
+  content: {
+    word: false,
+    definition: true,
+    image: false,
+    example: true,
+    qr: true,
+  },
+};
 
 export function ActivityStudio({
   initialActivityId = "flashcards",
@@ -32,24 +83,25 @@ export function ActivityStudio({
 }: ActivityStudioProps) {
   const [selectedActivityId, setSelectedActivityId] =
     useState<ActivityId>(initialActivityId);
-  const [selectedPlanId, setSelectedPlanId] =
-    useState<PlanTier["id"]>("free");
   const [visibility, setVisibility] = useState(initialSet.visibility);
-  const [cardSize, setCardSize] = useState<CardSize>("medium");
-  const [frameColor, setFrameColor] = useState(frameColors[0]);
-  const [includeImages, setIncludeImages] = useState(true);
+  const [cardsPerSheet, setCardsPerSheet] = useState<CardsPerSheet>(4);
+  const [cardLayout, setCardLayout] = useState<CardLayout>("stacked");
   const [printSides, setPrintSides] = useState<PrintSides>("front-only");
   const [fontStyle, setFontStyle] = useState<FontStyle>("rounded");
+  const [orientation, setOrientation] = useState<Orientation>("portrait");
+  const [sheetSize, setSheetSize] = useState<SheetSize>("letter");
+  const [frontSettings, setFrontSettings] =
+    useState<FlashcardSideSettings>(defaultFrontSettings);
+  const [backSettings, setBackSettings] =
+    useState<FlashcardSideSettings>(defaultBackSettings);
 
   const selectedActivity = activityDefinitions.find(
     (activity) => activity.id === selectedActivityId,
   );
-  const selectedPlan = planTiers.find((plan) => plan.id === selectedPlanId);
   const isFlashcards = selectedActivityId === "flashcards";
 
   const publicReady = useMemo(() => canPublishSet(initialSet), [initialSet]);
   const canPublish = visibility === "private" || publicReady;
-  const memberPlan = selectedPlanId === "premium" || selectedPlanId === "school";
 
   return (
     <section className="activity-studio" id="create">
@@ -155,38 +207,24 @@ export function ActivityStudio({
             </p>
           </div>
 
-          <div className="panel-section">
-            <h3>Plan preview</h3>
-            <div className="plan-list">
-              {planTiers.map((plan) => (
-                <button
-                  className={
-                    selectedPlanId === plan.id ? "plan-option active" : "plan-option"
-                  }
-                  key={plan.id}
-                  type="button"
-                  onClick={() => setSelectedPlanId(plan.id)}
-                >
-                  <strong>{plan.name}</strong>
-                  <small>{plan.watermark ? "Watermarked" : "No watermark"}</small>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {isFlashcards ? (
             <FlashcardControls
-              cardSize={cardSize}
-              frameColor={frameColor}
+              backSettings={backSettings}
+              cardLayout={cardLayout}
+              cardsPerSheet={cardsPerSheet}
               fontStyle={fontStyle}
-              includeImages={includeImages}
-              memberPlan={memberPlan}
+              frontSettings={frontSettings}
+              orientation={orientation}
               printSides={printSides}
-              setCardSize={setCardSize}
+              setBackSettings={setBackSettings}
+              setCardLayout={setCardLayout}
+              setCardsPerSheet={setCardsPerSheet}
               setFontStyle={setFontStyle}
-              setFrameColor={setFrameColor}
-              setIncludeImages={setIncludeImages}
+              setFrontSettings={setFrontSettings}
+              setOrientation={setOrientation}
               setPrintSides={setPrintSides}
+              setSheetSize={setSheetSize}
+              sheetSize={sheetSize}
             />
           ) : (
             <PlannedActivityControls activityId={selectedActivityId} />
@@ -214,14 +252,15 @@ export function ActivityStudio({
 
           {isFlashcards ? (
             <FlashcardPreview
-              cardSize={cardSize}
+              backSettings={backSettings}
+              cardLayout={cardLayout}
+              cardsPerSheet={cardsPerSheet}
               fontStyle={fontStyle}
-              frameColor={frameColor}
-              includeImages={includeImages}
+              frontSettings={frontSettings}
               initialSet={initialSet}
-              memberPlan={memberPlan}
+              orientation={orientation}
               printSides={printSides}
-              showWatermark={selectedPlan?.watermark ?? true}
+              sheetSize={sheetSize}
             />
           ) : (
             <PlannedActivityPreview activityId={selectedActivityId} />
@@ -233,81 +272,112 @@ export function ActivityStudio({
 }
 
 function FlashcardControls({
-  cardSize,
-  frameColor,
+  backSettings,
+  cardLayout,
+  cardsPerSheet,
   fontStyle,
-  includeImages,
-  memberPlan,
+  frontSettings,
+  orientation,
   printSides,
-  setCardSize,
+  setBackSettings,
+  setCardLayout,
+  setCardsPerSheet,
   setFontStyle,
-  setFrameColor,
-  setIncludeImages,
+  setFrontSettings,
+  setOrientation,
   setPrintSides,
+  setSheetSize,
+  sheetSize,
 }: {
-  cardSize: CardSize;
-  frameColor: string;
+  backSettings: FlashcardSideSettings;
+  cardLayout: CardLayout;
+  cardsPerSheet: CardsPerSheet;
   fontStyle: FontStyle;
-  includeImages: boolean;
-  memberPlan: boolean;
+  frontSettings: FlashcardSideSettings;
+  orientation: Orientation;
   printSides: PrintSides;
-  setCardSize: (size: CardSize) => void;
+  setBackSettings: (settings: FlashcardSideSettings) => void;
+  setCardLayout: (layout: CardLayout) => void;
+  setCardsPerSheet: (count: CardsPerSheet) => void;
   setFontStyle: (font: FontStyle) => void;
-  setFrameColor: (color: string) => void;
-  setIncludeImages: (include: boolean) => void;
+  setFrontSettings: (settings: FlashcardSideSettings) => void;
+  setOrientation: (orientation: Orientation) => void;
   setPrintSides: (sides: PrintSides) => void;
+  setSheetSize: (size: SheetSize) => void;
+  sheetSize: SheetSize;
 }) {
   return (
     <>
       <div className="panel-section">
-        <h3>Flashcard size</h3>
-        <div className="segmented three">
-          {(["small", "medium", "large"] as CardSize[]).map((size) => (
+        <h3>Cards per sheet</h3>
+        <div className="segmented six">
+          {cardsPerSheetOptions.map((count) => (
             <button
-              className={cardSize === size ? "active" : ""}
-              key={size}
+              className={cardsPerSheet === count ? "active" : ""}
+              key={count}
               type="button"
-              onClick={() => setCardSize(size)}
+              onClick={() => setCardsPerSheet(count)}
             >
-              {size}
+              {count}
             </button>
           ))}
         </div>
       </div>
 
       <div className="panel-section">
-        <h3>Frame color</h3>
-        <div className="color-row">
-          {frameColors.map((color) => (
+        <h3>Grid layout</h3>
+        <div className="layout-grid">
+          {([
+            ["stacked", "Image above text"],
+            ["side", "Image left, text right"],
+            ["text-first", "Text above image"],
+            ["image-only", "Image focus"],
+          ] as [CardLayout, string][]).map(([layout, label]) => (
             <button
-              aria-label={`Use frame color ${color}`}
-              className={frameColor === color ? "color-dot active" : "color-dot"}
-              key={color}
-              onClick={() => setFrameColor(color)}
-              style={{ background: color }}
+              className={cardLayout === layout ? "layout-option active" : "layout-option"}
+              key={layout}
+              onClick={() => setCardLayout(layout)}
               type="button"
-            />
+            >
+              <span className={`layout-thumb layout-${layout}`}>
+                <i />
+                <i />
+              </span>
+              <strong>{label}</strong>
+            </button>
           ))}
         </div>
       </div>
 
       <div className="panel-section">
-        <h3>Images</h3>
+        <h3>Sheet</h3>
         <div className="segmented">
           <button
-            className={includeImages ? "active" : ""}
+            className={orientation === "portrait" ? "active" : ""}
             type="button"
-            onClick={() => setIncludeImages(true)}
+            onClick={() => setOrientation("portrait")}
           >
-            Include
+            Portrait
           </button>
           <button
-            className={!includeImages ? "active" : ""}
+            className={orientation === "landscape" ? "active" : ""}
             type="button"
-            onClick={() => setIncludeImages(false)}
+            onClick={() => setOrientation("landscape")}
           >
-            Text only
+            Landscape
           </button>
+        </div>
+        <div className="sheet-size-list">
+          <button
+            className={sheetSize === "letter" ? "plan-option active" : "plan-option"}
+            onClick={() => setSheetSize("letter")}
+            type="button"
+          >
+            <strong>Letter</strong>
+            <small>Default</small>
+          </button>
+          <LockedOption enabled={false} label="A4" value="Members only" />
+          <LockedOption enabled={false} label="Legal" value="Members only" />
         </div>
       </div>
 
@@ -345,22 +415,128 @@ function FlashcardControls({
             </button>
           ))}
         </div>
+        <div className="member-note">Upload your own font: Members only</div>
       </div>
 
-      <div className="panel-section premium-panel">
-        <h3>Premium options</h3>
-        <LockedOption
-          enabled={memberPlan}
-          label="Add school logo"
-          value="Members only"
+      <SideSettingsControls
+        label="Front side"
+        settings={frontSettings}
+        setSettings={setFrontSettings}
+      />
+
+      {printSides === "double-sided" ? (
+        <SideSettingsControls
+          label="Back side"
+          settings={backSettings}
+          setSettings={setBackSettings}
         />
-        <LockedOption
-          enabled={memberPlan}
-          label="Remove MyOwnMaterials watermark"
-          value="Members only"
-        />
-      </div>
+      ) : null}
     </>
+  );
+}
+
+function SideSettingsControls({
+  label,
+  settings,
+  setSettings,
+}: {
+  label: string;
+  settings: FlashcardSideSettings;
+  setSettings: (settings: FlashcardSideSettings) => void;
+}) {
+  const updateContent = (key: ContentKey) => {
+    setSettings({
+      ...settings,
+      content: {
+        ...settings.content,
+        [key]: !settings.content[key],
+      },
+    });
+  };
+
+  return (
+    <div className="panel-section side-config">
+      <h3>{label}</h3>
+      <ColorPalette
+        colors={backgroundColors}
+        label="Background"
+        selectedColor={settings.backgroundColor}
+        onSelect={(backgroundColor) => setSettings({ ...settings, backgroundColor })}
+      />
+      <ColorPalette
+        colors={frameColors}
+        label="Border"
+        selectedColor={settings.borderColor}
+        onSelect={(borderColor) => setSettings({ ...settings, borderColor })}
+      />
+      <ColorPalette
+        colors={textColors}
+        label="Text"
+        selectedColor={settings.textColor}
+        onSelect={(textColor) => setSettings({ ...settings, textColor })}
+      />
+      <label className="range-control">
+        <span>Border width: {settings.borderWidth}px</span>
+        <input
+          max="10"
+          min="0"
+          onChange={(event) =>
+            setSettings({ ...settings, borderWidth: Number(event.target.value) })
+          }
+          type="range"
+          value={settings.borderWidth}
+        />
+      </label>
+      <div className="content-toggle-grid">
+        {contentOptions.map((option) => (
+          <button
+            className={settings.content[option.key] ? "active" : ""}
+            key={option.key}
+            onClick={() => updateContent(option.key)}
+            type="button"
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+      <button
+        className={settings.dottedWord ? "toggle-row active" : "toggle-row"}
+        onClick={() => setSettings({ ...settings, dottedWord: !settings.dottedWord })}
+        type="button"
+      >
+        Dotted tracing word
+      </button>
+    </div>
+  );
+}
+
+function ColorPalette({
+  colors,
+  label,
+  onSelect,
+  selectedColor,
+}: {
+  colors: string[];
+  label: string;
+  onSelect: (color: string) => void;
+  selectedColor: string;
+}) {
+  return (
+    <div className="palette-group">
+      <span>{label}</span>
+      <div className="color-row">
+        {colors.map((color) => (
+          <button
+            aria-label={`Use ${label.toLowerCase()} color ${color}`}
+            className={selectedColor === color ? "color-dot active" : "color-dot"}
+            key={`${label}-${color}`}
+            onClick={() => onSelect(color)}
+            style={{ background: color }}
+            type="button"
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -401,60 +577,143 @@ function PlannedActivityControls({ activityId }: { activityId: ActivityId }) {
 }
 
 function FlashcardPreview({
-  cardSize,
+  backSettings,
+  cardLayout,
+  cardsPerSheet,
   fontStyle,
-  frameColor,
-  includeImages,
+  frontSettings,
   initialSet,
-  memberPlan,
+  orientation,
   printSides,
-  showWatermark,
+  sheetSize,
 }: {
-  cardSize: CardSize;
+  backSettings: FlashcardSideSettings;
+  cardLayout: CardLayout;
+  cardsPerSheet: CardsPerSheet;
   fontStyle: FontStyle;
-  frameColor: string;
-  includeImages: boolean;
+  frontSettings: FlashcardSideSettings;
   initialSet: VocabularySet;
-  memberPlan: boolean;
+  orientation: Orientation;
   printSides: PrintSides;
-  showWatermark: boolean;
+  sheetSize: SheetSize;
 }) {
   return (
-    <div
-      className={`flashcard-sheet size-${cardSize} font-${fontStyle} ${
-        includeImages ? "" : "text-only"
-      } ${printSides === "double-sided" ? "double-sided" : ""}`}
-      style={{ "--accent": frameColor } as React.CSSProperties}
-    >
-      {initialSet.items.map((item) => {
-        const asset = getAsset(item.assetId);
-        const reusableCount = getReusableAssetsForWord(item.word).length;
-
-        return (
-          <article className="flashcard" key={item.id}>
-            {showWatermark ? <span className="watermark">MyOwnMaterials</span> : null}
-            {memberPlan ? <span className="school-logo">School logo</span> : null}
-            {includeImages && asset ? (
-              <div className="flashcard-image-wrap">
-                <Image src={asset.imageUrl} alt={asset.alt} width={640} height={480} />
-              </div>
-            ) : null}
-            <div className="flashcard-body">
-              <div>
-                <p className="word">{item.word}</p>
-                <p className="definition">{item.definition}</p>
-              </div>
-              <p className="example">&ldquo;{item.example}&rdquo;</p>
-              <div className="asset-meta">
-                <span>{printSides === "double-sided" ? "front + back" : "front only"}</span>
-                <span>{asset?.licenseStatus ?? "No asset"}</span>
-                <span>{reusableCount} reusable image option(s)</span>
-              </div>
-            </div>
-          </article>
-        );
-      })}
+    <div className="sheet-preview-stack">
+      <FlashcardSheet
+        cardLayout={cardLayout}
+        cardsPerSheet={cardsPerSheet}
+        fontStyle={fontStyle}
+        initialSet={initialSet}
+        orientation={orientation}
+        settings={frontSettings}
+        sheetLabel="Front side"
+        sheetSize={sheetSize}
+      />
+      {printSides === "double-sided" ? (
+        <FlashcardSheet
+          cardLayout={cardLayout}
+          cardsPerSheet={cardsPerSheet}
+          fontStyle={fontStyle}
+          initialSet={initialSet}
+          orientation={orientation}
+          settings={backSettings}
+          sheetLabel="Back side"
+          sheetSize={sheetSize}
+        />
+      ) : null}
     </div>
+  );
+}
+
+function FlashcardSheet({
+  cardLayout,
+  cardsPerSheet,
+  fontStyle,
+  initialSet,
+  orientation,
+  settings,
+  sheetLabel,
+  sheetSize,
+}: {
+  cardLayout: CardLayout;
+  cardsPerSheet: CardsPerSheet;
+  fontStyle: FontStyle;
+  initialSet: VocabularySet;
+  orientation: Orientation;
+  settings: FlashcardSideSettings;
+  sheetLabel: string;
+  sheetSize: SheetSize;
+}) {
+  const previewItems = Array.from({ length: cardsPerSheet }, (_, index) => {
+    return initialSet.items[index % initialSet.items.length];
+  });
+
+  return (
+    <section className={`flashcard-page sheet-${sheetSize} ${orientation}`}>
+      <div className="preview-side-label">
+        <span>{sheetLabel}</span>
+        <small>
+          {cardsPerSheet} per sheet · {orientation}
+        </small>
+      </div>
+      <div
+        className={`flashcard-sheet cards-${cardsPerSheet} layout-${cardLayout} font-${fontStyle}`}
+      >
+        {previewItems.map((item, index) => {
+          const asset = getAsset(item.assetId);
+          const reusableCount = getReusableAssetsForWord(item.word).length;
+
+          return (
+            <article
+              className="flashcard"
+              key={`${sheetLabel}-${item.id}-${index}`}
+              style={
+                {
+                  "--card-bg": settings.backgroundColor,
+                  "--card-border": settings.borderColor,
+                  "--card-border-width": `${settings.borderWidth}px`,
+                  "--text-color": settings.textColor,
+                } as React.CSSProperties
+              }
+            >
+              {settings.content.image && asset ? (
+                <div className="flashcard-image-wrap">
+                  <Image
+                    src={asset.imageUrl}
+                    alt={asset.alt}
+                    width={640}
+                    height={480}
+                  />
+                </div>
+              ) : null}
+              <div className="flashcard-body">
+                {settings.content.word ? (
+                  <p className={settings.dottedWord ? "word dotted-word" : "word"}>
+                    {item.word}
+                  </p>
+                ) : null}
+                {settings.content.definition ? (
+                  <p className="definition">{item.definition}</p>
+                ) : null}
+                {settings.content.example ? (
+                  <p className="example">&ldquo;{item.example}&rdquo;</p>
+                ) : null}
+                {settings.content.qr ? (
+                  <div className="qr-row">
+                    <span className="qr-code" aria-label={`Audio QR for ${item.word}`} />
+                    <small>Scan for audio</small>
+                  </div>
+                ) : null}
+                <div className="asset-meta">
+                  <span>{asset?.licenseStatus ?? "No asset"}</span>
+                  <span>{reusableCount} reusable image option(s)</span>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
