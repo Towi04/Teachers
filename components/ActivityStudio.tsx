@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { type ChangeEvent, type ReactNode, useMemo, useState } from "react";
 import {
   activityDefinitions,
   canPublishSet,
@@ -19,7 +19,7 @@ type ActivityStudioProps = {
 
 type CardsPerSheet = 1 | 2 | 3 | 4 | 6 | 8;
 type CardLayout = "stacked" | "side" | "text-first" | "image-only";
-type ContentKey = "word" | "definition" | "image" | "example" | "qr";
+type ContentKey = "word" | "definition" | "translation" | "image" | "example" | "qr";
 type PrintSides = "front-only" | "double-sided";
 type FontStyle = "rounded" | "classic" | "bold";
 type Orientation = "portrait" | "landscape";
@@ -34,6 +34,15 @@ type FlashcardSideSettings = {
   content: Record<ContentKey, boolean>;
 };
 
+type EditableVocabularyItem = {
+  id: string;
+  word: string;
+  definition: string;
+  example: string;
+  translation: string;
+  assetId: string;
+};
+
 const frameColors = ["#f97316", "#2563eb", "#16a34a", "#db2777", "#111827"];
 const backgroundColors = ["#ffffff", "#fff7ed", "#fef3c7", "#dcfce7", "#dbeafe", "#fce7f3"];
 const textColors = ["#172033", "#1d4ed8", "#166534", "#be123c", "#7c2d12", "#ffffff"];
@@ -41,6 +50,7 @@ const cardsPerSheetOptions: CardsPerSheet[] = [1, 2, 3, 4, 6, 8];
 const contentOptions: { key: ContentKey; label: string }[] = [
   { key: "word", label: "Word" },
   { key: "definition", label: "Definition" },
+  { key: "translation", label: "Translation" },
   { key: "image", label: "Image" },
   { key: "example", label: "Example sentence" },
   { key: "qr", label: "Audio QR" },
@@ -55,6 +65,7 @@ const defaultFrontSettings: FlashcardSideSettings = {
   content: {
     word: true,
     definition: false,
+    translation: false,
     image: true,
     example: false,
     qr: true,
@@ -70,6 +81,7 @@ const defaultBackSettings: FlashcardSideSettings = {
   content: {
     word: false,
     definition: true,
+    translation: true,
     image: false,
     example: true,
     qr: true,
@@ -84,6 +96,18 @@ export function ActivityStudio({
   const [selectedActivityId, setSelectedActivityId] =
     useState<ActivityId>(initialActivityId);
   const [visibility, setVisibility] = useState(initialSet.visibility);
+  const [materialTitle, setMaterialTitle] = useState(initialSet.title);
+  const [items, setItems] = useState<EditableVocabularyItem[]>(() =>
+    initialSet.items.map((item) => ({
+      ...item,
+      translation: "",
+    })),
+  );
+  const [bulkText, setBulkText] = useState(
+    initialSet.items
+      .map((item) => `${item.word},${item.definition},${item.example},`)
+      .join("\n"),
+  );
   const [cardsPerSheet, setCardsPerSheet] = useState<CardsPerSheet>(4);
   const [cardLayout, setCardLayout] = useState<CardLayout>("stacked");
   const [printSides, setPrintSides] = useState<PrintSides>("front-only");
@@ -172,10 +196,10 @@ export function ActivityStudio({
             <h3>Content source</h3>
             <div className="content-card">
               <span>{initialSet.subject}</span>
-              <strong>{initialSet.title}</strong>
+              <strong>{materialTitle}</strong>
               <small>
                 {initialSet.language} · {initialSet.gradeBand} ·{" "}
-                {initialSet.items.length} words
+                {items.length} words
               </small>
             </div>
           </div>
@@ -212,15 +236,21 @@ export function ActivityStudio({
               backSettings={backSettings}
               cardLayout={cardLayout}
               cardsPerSheet={cardsPerSheet}
+              bulkText={bulkText}
               fontStyle={fontStyle}
               frontSettings={frontSettings}
+              items={items}
+              materialTitle={materialTitle}
               orientation={orientation}
               printSides={printSides}
               setBackSettings={setBackSettings}
+              setBulkText={setBulkText}
               setCardLayout={setCardLayout}
               setCardsPerSheet={setCardsPerSheet}
               setFontStyle={setFontStyle}
               setFrontSettings={setFrontSettings}
+              setItems={setItems}
+              setMaterialTitle={setMaterialTitle}
               setOrientation={setOrientation}
               setPrintSides={setPrintSides}
               setSheetSize={setSheetSize}
@@ -257,7 +287,8 @@ export function ActivityStudio({
               cardsPerSheet={cardsPerSheet}
               fontStyle={fontStyle}
               frontSettings={frontSettings}
-              initialSet={initialSet}
+              items={items}
+              materialTitle={materialTitle}
               orientation={orientation}
               printSides={printSides}
               sheetSize={sheetSize}
@@ -273,43 +304,209 @@ export function ActivityStudio({
 
 function FlashcardControls({
   backSettings,
+  bulkText,
   cardLayout,
   cardsPerSheet,
   fontStyle,
   frontSettings,
+  items,
+  materialTitle,
   orientation,
   printSides,
   setBackSettings,
+  setBulkText,
   setCardLayout,
   setCardsPerSheet,
   setFontStyle,
   setFrontSettings,
+  setItems,
+  setMaterialTitle,
   setOrientation,
   setPrintSides,
   setSheetSize,
   sheetSize,
 }: {
   backSettings: FlashcardSideSettings;
+  bulkText: string;
   cardLayout: CardLayout;
   cardsPerSheet: CardsPerSheet;
   fontStyle: FontStyle;
   frontSettings: FlashcardSideSettings;
+  items: EditableVocabularyItem[];
+  materialTitle: string;
   orientation: Orientation;
   printSides: PrintSides;
   setBackSettings: (settings: FlashcardSideSettings) => void;
+  setBulkText: (text: string) => void;
   setCardLayout: (layout: CardLayout) => void;
   setCardsPerSheet: (count: CardsPerSheet) => void;
   setFontStyle: (font: FontStyle) => void;
   setFrontSettings: (settings: FlashcardSideSettings) => void;
+  setItems: (items: EditableVocabularyItem[]) => void;
+  setMaterialTitle: (title: string) => void;
   setOrientation: (orientation: Orientation) => void;
   setPrintSides: (sides: PrintSides) => void;
   setSheetSize: (size: SheetSize) => void;
   sheetSize: SheetSize;
 }) {
+  const updateItem = (
+    itemId: string,
+    field: keyof Omit<EditableVocabularyItem, "id" | "assetId">,
+    value: string,
+  ) => {
+    setItems(
+      items.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)),
+    );
+  };
+  const applyBulkText = (text: string) => {
+    const parsed = text
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line, index) => {
+        const [word = "", definition = "", example = "", translation = ""] =
+          parseCsvLine(line);
+        return {
+          id: `bulk-${index}-${word || "word"}`,
+          word,
+          definition,
+          example,
+          translation,
+          assetId: items[index % Math.max(items.length, 1)]?.assetId ?? "run-park",
+        };
+      })
+      .filter((item) => item.word);
+
+    if (parsed.length > 0) {
+      setItems(parsed);
+    }
+  };
+  const downloadCsvTemplate = () => {
+    const csv = "word,definition,example,translation\nrun,To move quickly,I run in the park,correr\n";
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "myownmaterials-flashcards-template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+  const uploadCsv = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const text = await file.text();
+    const withoutHeader = text.replace(/^word,definition,example,translation\r?\n/i, "");
+    setBulkText(withoutHeader.trim());
+    applyBulkText(withoutHeader);
+    event.target.value = "";
+  };
+
   return (
     <>
-      <div className="panel-section">
-        <h3>Cards per sheet</h3>
+      <Accordion title="Title" defaultOpen>
+        <label className="field-stack">
+          <span>Flashcard set title</span>
+          <input
+            onChange={(event) => setMaterialTitle(event.target.value)}
+            placeholder="Animals A1, Irregular verbs, Classroom objects..."
+            type="text"
+            value={materialTitle}
+          />
+        </label>
+        <p className="policy-note">
+          This name will be used for saving, publishing, and finding the material later.
+        </p>
+      </Accordion>
+
+      <Accordion title="Texts" defaultOpen>
+        <div className="csv-actions">
+          <button className="secondary-button" onClick={downloadCsvTemplate} type="button">
+            Download CSV template
+          </button>
+          <label className="secondary-button file-button">
+            Upload CSV
+            <input accept=".csv,text/csv" onChange={uploadCsv} type="file" />
+          </label>
+        </div>
+        <label className="field-stack">
+          <span>Paste CSV rows</span>
+          <textarea
+            onBlur={() => applyBulkText(bulkText)}
+            onChange={(event) => setBulkText(event.target.value)}
+            rows={5}
+            value={bulkText}
+          />
+        </label>
+        <div className="editable-table">
+          {items.slice(0, 6).map((item) => (
+            <div className="editable-row" key={item.id}>
+              <input
+                aria-label="Word"
+                onChange={(event) => updateItem(item.id, "word", event.target.value)}
+                value={item.word}
+              />
+              <input
+                aria-label="Definition"
+                onChange={(event) =>
+                  updateItem(item.id, "definition", event.target.value)
+                }
+                value={item.definition}
+              />
+              <input
+                aria-label="Example"
+                onChange={(event) => updateItem(item.id, "example", event.target.value)}
+                value={item.example}
+              />
+              <input
+                aria-label="Translation"
+                onChange={(event) =>
+                  updateItem(item.id, "translation", event.target.value)
+                }
+                placeholder="Translation"
+                value={item.translation}
+              />
+            </div>
+          ))}
+        </div>
+      </Accordion>
+
+      <Accordion title="Design" defaultOpen>
+        <h4>Print sides</h4>
+        <div className="segmented">
+          <button
+            className={printSides === "front-only" ? "active" : ""}
+            type="button"
+            onClick={() => setPrintSides("front-only")}
+          >
+            Front only
+          </button>
+          <button
+            className={printSides === "double-sided" ? "active" : ""}
+            type="button"
+            onClick={() => setPrintSides("double-sided")}
+          >
+            Front + back
+          </button>
+        </div>
+        <SideSettingsControls
+          label="Front side"
+          settings={frontSettings}
+          setSettings={setFrontSettings}
+        />
+        {printSides === "double-sided" ? (
+          <SideSettingsControls
+            label="Back side"
+            settings={backSettings}
+            setSettings={setBackSettings}
+          />
+        ) : null}
+      </Accordion>
+
+      <Accordion title="Page">
+        <h4>Cards per sheet</h4>
         <div className="segmented six">
           {cardsPerSheetOptions.map((count) => (
             <button
@@ -322,10 +519,7 @@ function FlashcardControls({
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="panel-section">
-        <h3>Grid layout</h3>
+        <h4>Grid layout</h4>
         <div className="layout-grid">
           {([
             ["stacked", "Image above text"],
@@ -347,10 +541,7 @@ function FlashcardControls({
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="panel-section">
-        <h3>Sheet</h3>
+        <h4>Sheet</h4>
         <div className="segmented">
           <button
             className={orientation === "portrait" ? "active" : ""}
@@ -379,30 +570,10 @@ function FlashcardControls({
           <LockedOption enabled={false} label="A4" value="Members only" />
           <LockedOption enabled={false} label="Legal" value="Members only" />
         </div>
-      </div>
+      </Accordion>
 
-      <div className="panel-section">
-        <h3>Print sides</h3>
-        <div className="segmented">
-          <button
-            className={printSides === "front-only" ? "active" : ""}
-            type="button"
-            onClick={() => setPrintSides("front-only")}
-          >
-            Front only
-          </button>
-          <button
-            className={printSides === "double-sided" ? "active" : ""}
-            type="button"
-            onClick={() => setPrintSides("double-sided")}
-          >
-            Front + back
-          </button>
-        </div>
-      </div>
-
-      <div className="panel-section">
-        <h3>Font style</h3>
+      <Accordion title="Typography and audio">
+        <h4>Font style</h4>
         <div className="segmented three">
           {(["rounded", "classic", "bold"] as FontStyle[]).map((font) => (
             <button
@@ -416,21 +587,10 @@ function FlashcardControls({
           ))}
         </div>
         <div className="member-note">Upload your own font: Members only</div>
-      </div>
-
-      <SideSettingsControls
-        label="Front side"
-        settings={frontSettings}
-        setSettings={setFrontSettings}
-      />
-
-      {printSides === "double-sided" ? (
-        <SideSettingsControls
-          label="Back side"
-          settings={backSettings}
-          setSettings={setBackSettings}
-        />
-      ) : null}
+        <p className="policy-note">
+          Enable the Audio QR field on either side to show a scan code for word audio.
+        </p>
+      </Accordion>
     </>
   );
 }
@@ -540,6 +700,47 @@ function ColorPalette({
   );
 }
 
+function Accordion({
+  children,
+  defaultOpen = false,
+  title,
+}: {
+  children: ReactNode;
+  defaultOpen?: boolean;
+  title: string;
+}) {
+  return (
+    <details className="config-accordion" open={defaultOpen}>
+      <summary>{title}</summary>
+      <div className="accordion-body">{children}</div>
+    </details>
+  );
+}
+
+function parseCsvLine(line: string) {
+  const cells: string[] = [];
+  let current = "";
+  let quoted = false;
+
+  for (const char of line) {
+    if (char === '"') {
+      quoted = !quoted;
+      continue;
+    }
+
+    if (char === "," && !quoted) {
+      cells.push(current.trim());
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  cells.push(current.trim());
+  return cells;
+}
+
 function LockedOption({
   enabled,
   label,
@@ -582,7 +783,8 @@ function FlashcardPreview({
   cardsPerSheet,
   fontStyle,
   frontSettings,
-  initialSet,
+  items,
+  materialTitle,
   orientation,
   printSides,
   sheetSize,
@@ -592,7 +794,8 @@ function FlashcardPreview({
   cardsPerSheet: CardsPerSheet;
   fontStyle: FontStyle;
   frontSettings: FlashcardSideSettings;
-  initialSet: VocabularySet;
+  items: EditableVocabularyItem[];
+  materialTitle: string;
   orientation: Orientation;
   printSides: PrintSides;
   sheetSize: SheetSize;
@@ -603,7 +806,7 @@ function FlashcardPreview({
         cardLayout={cardLayout}
         cardsPerSheet={cardsPerSheet}
         fontStyle={fontStyle}
-        initialSet={initialSet}
+        items={items}
         orientation={orientation}
         settings={frontSettings}
         sheetLabel="Front side"
@@ -614,7 +817,7 @@ function FlashcardPreview({
           cardLayout={cardLayout}
           cardsPerSheet={cardsPerSheet}
           fontStyle={fontStyle}
-          initialSet={initialSet}
+          items={items}
           mirrorForBack
           orientation={orientation}
           settings={backSettings}
@@ -622,6 +825,10 @@ function FlashcardPreview({
           sheetSize={sheetSize}
         />
       ) : null}
+      <div className="full-preview-note">
+        <strong>{materialTitle}</strong>
+        <span>Full document preview will be generated after configuration.</span>
+      </div>
     </div>
   );
 }
@@ -630,7 +837,7 @@ function FlashcardSheet({
   cardLayout,
   cardsPerSheet,
   fontStyle,
-  initialSet,
+  items,
   mirrorForBack = false,
   orientation,
   settings,
@@ -640,16 +847,15 @@ function FlashcardSheet({
   cardLayout: CardLayout;
   cardsPerSheet: CardsPerSheet;
   fontStyle: FontStyle;
-  initialSet: VocabularySet;
+  items: EditableVocabularyItem[];
   mirrorForBack?: boolean;
   orientation: Orientation;
   settings: FlashcardSideSettings;
   sheetLabel: string;
   sheetSize: SheetSize;
 }) {
-  const previewItems = Array.from({ length: cardsPerSheet }, (_, index) => {
-    return initialSet.items[index % initialSet.items.length];
-  });
+  const sampleItem = items[0];
+  const previewItems = sampleItem ? [sampleItem] : [];
   const orderedItems = mirrorForBack
     ? mirrorItemsByPrintedRow(previewItems, cardsPerSheet)
     : previewItems;
@@ -663,7 +869,7 @@ function FlashcardSheet({
         </small>
       </div>
       <div
-        className={`flashcard-sheet cards-${cardsPerSheet} layout-${cardLayout} font-${fontStyle}`}
+        className={`flashcard-sheet cards-1 layout-${cardLayout} font-${fontStyle}`}
       >
         {orderedItems.map((item, index) => {
           const asset = getAsset(item.assetId);
@@ -703,6 +909,9 @@ function FlashcardSheet({
                 ) : null}
                 {settings.content.definition ? (
                   <p className="definition">{item.definition}</p>
+                ) : null}
+                {settings.content.translation ? (
+                  <p className="translation">{item.translation || "Translation"}</p>
                 ) : null}
                 {settings.content.example ? (
                   <p className="example">&ldquo;{item.example}&rdquo;</p>

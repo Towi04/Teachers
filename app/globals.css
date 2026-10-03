@@ -484,6 +484,111 @@ main {
   margin: 0 0 0.75rem;
 }
 
+.config-accordion {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.config-accordion + .config-accordion {
+  margin-top: -0.6rem;
+}
+
+.config-accordion summary {
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 1000;
+  list-style: none;
+  padding: 1rem;
+  text-transform: uppercase;
+}
+
+.config-accordion summary::-webkit-details-marker {
+  display: none;
+}
+
+.config-accordion summary::after {
+  content: "+";
+  float: right;
+}
+
+.config-accordion[open] summary::after {
+  content: "-";
+}
+
+.accordion-body {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.accordion-body h4 {
+  margin: 0;
+}
+
+.field-stack {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.field-stack span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.field-stack input,
+.field-stack textarea,
+.editable-row input {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  color: var(--ink);
+  font: inherit;
+  padding: 0.75rem;
+  width: 100%;
+}
+
+.field-stack textarea {
+  resize: vertical;
+}
+
+.csv-actions {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.secondary-button {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 900;
+  justify-content: center;
+  padding: 0.75rem 0.95rem;
+  text-align: center;
+}
+
+.file-button input {
+  display: none;
+}
+
+.editable-table {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.editable-row {
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .content-card {
   background: #fff7ed;
   border: 1px solid #fed7aa;
@@ -1019,7 +1124,8 @@ main {
 }
 
 .definition,
-.example {
+.example,
+.translation {
   color: color-mix(in srgb, var(--text-color, var(--ink)), transparent 20%);
   font-size: clamp(0.72rem, 1vw, 1rem);
   line-height: 1.5;
@@ -1028,6 +1134,10 @@ main {
 
 .example {
   font-style: italic;
+}
+
+.translation {
+  font-weight: 900;
 }
 
 .asset-meta {
@@ -1118,6 +1228,19 @@ main {
   border: 1px solid #e2e8f0;
   border-radius: 1rem;
   padding: 1rem;
+}
+
+.full-preview-note {
+  background: #fff7ed;
+  border: 1px dashed #fdba74;
+  border-radius: 1rem;
+  display: grid;
+  gap: 0.25rem;
+  padding: 1rem;
+}
+
+.full-preview-note span {
+  color: var(--muted);
 }
 
 .planned-preview-grid small {
@@ -1222,6 +1345,8 @@ main {
   .activity-picker,
   .tool-grid,
   .card-grid,
+  .csv-actions,
+  .editable-row,
   .planned-preview-grid,
   .roadmap-grid {
     grid-template-columns: 1fr;
