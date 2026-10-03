@@ -948,6 +948,7 @@ main {
   background: #f8fafc;
   min-height: 0;
   overflow: hidden;
+  position: relative;
 }
 
 .text-only .flashcard {

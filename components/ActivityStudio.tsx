@@ -687,9 +687,9 @@ function FlashcardSheet({
                   <Image
                     src={asset.imageUrl}
                     alt={asset.alt}
-                    width={640}
-                    height={480}
-                    style={{ height: "100%", objectFit: "cover", width: "100%" }}
+                    fill
+                    sizes="(max-width: 900px) 50vw, 220px"
+                    style={{ objectFit: "cover" }}
                   />
                 </div>
               ) : null}
