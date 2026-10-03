@@ -850,7 +850,11 @@ main {
 }
 
 .preview-area {
-  overflow: hidden;
+  align-self: start;
+  max-height: calc(100vh - 6rem);
+  overflow: auto;
+  position: sticky;
+  top: 5rem;
 }
 
 .preview-toolbar {
@@ -1320,6 +1324,11 @@ main {
   }
 
   .control-panel {
+    position: static;
+  }
+
+  .preview-area {
+    max-height: none;
     position: static;
   }
 
