@@ -4726,6 +4726,231 @@ function parseCsvLine(line: string) {
   return cells;
 }
 
+function normalizeCrosswordWord(word: string) {
+  return word
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+}
+
+function buildCrossword(
+  entries: CrosswordEntry[],
+  requestedSize: number,
+  numbering: CrosswordNumbering,
+): CrosswordBuildResult {
+  const size = Math.max(8, Math.min(18, requestedSize));
+  const grid: (string | null)[][] = Array.from({ length: size }, () =>
+    Array.from({ length: size }, () => null),
+  );
+  const cleanEntries = entries
+    .map((entry) => ({ ...entry, cleanWord: normalizeCrosswordWord(entry.word) }))
+    .filter((entry) => entry.cleanWord.length > 1);
+  const placements: Omit<CrosswordPlacement, "number">[] = [];
+  const skipped: CrosswordEntry[] = [];
+
+  cleanEntries.forEach((entry, entryIndex) => {
+    if (entry.cleanWord.length > size) {
+      skipped.push(entry);
+      return;
+    }
+
+    const placement =
+      entryIndex === 0
+        ? getFirstCrosswordPlacement(entry, size)
+        : findIntersectingCrosswordPlacement(entry, placements, grid) ??
+          findFallbackCrosswordPlacement(entry, grid);
+
+    if (!placement) {
+      skipped.push(entry);
+      return;
+    }
+
+    writeCrosswordPlacement(grid, placement);
+    placements.push(placement);
+  });
+
+  const numbers = numberCrosswordPlacements(placements, numbering);
+  const numberedPlacements = placements.map((placement, index) => ({
+    ...placement,
+    number:
+      numbering === "entry-order"
+        ? index + 1
+        : numbers.get(`${placement.row}:${placement.col}`) ?? index + 1,
+  }));
+
+  return { grid, placements: numberedPlacements, skipped, numbers };
+}
+
+function getFirstCrosswordPlacement(
+  entry: CrosswordEntry & { cleanWord: string },
+  size: number,
+): Omit<CrosswordPlacement, "number"> {
+  return {
+    ...entry,
+    col: Math.max(0, Math.floor((size - entry.cleanWord.length) / 2)),
+    direction: "across",
+    row: Math.floor(size / 2),
+  };
+}
+
+function findIntersectingCrosswordPlacement(
+  entry: CrosswordEntry & { cleanWord: string },
+  placements: Omit<CrosswordPlacement, "number">[],
+  grid: (string | null)[][],
+) {
+  let bestPlacement: Omit<CrosswordPlacement, "number"> | null = null;
+  let bestScore = Number.NEGATIVE_INFINITY;
+  const size = grid.length;
+  const center = (size - 1) / 2;
+
+  placements.forEach((placed) => {
+    for (let placedIndex = 0; placedIndex < placed.cleanWord.length; placedIndex += 1) {
+      for (let entryIndex = 0; entryIndex < entry.cleanWord.length; entryIndex += 1) {
+        if (placed.cleanWord[placedIndex] !== entry.cleanWord[entryIndex]) {
+          continue;
+        }
+
+        const direction: CrosswordDirection =
+          placed.direction === "across" ? "down" : "across";
+        const row =
+          placed.direction === "across"
+            ? placed.row - entryIndex
+            : placed.row + placedIndex;
+        const col =
+          placed.direction === "across"
+            ? placed.col + placedIndex
+            : placed.col - entryIndex;
+        const candidate = { ...entry, row, col, direction };
+
+        if (!canPlaceCrosswordEntry(grid, candidate)) {
+          continue;
+        }
+
+        const intersections = countCrosswordIntersections(grid, candidate);
+        const distanceFromCenter = Math.abs(row - center) + Math.abs(col - center);
+        const score = intersections * 100 - distanceFromCenter;
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestPlacement = candidate;
+        }
+      }
+    }
+  });
+
+  return bestPlacement;
+}
+
+function findFallbackCrosswordPlacement(
+  entry: CrosswordEntry & { cleanWord: string },
+  grid: (string | null)[][],
+) {
+  const directions: CrosswordDirection[] = ["across", "down"];
+
+  for (const direction of directions) {
+    for (let row = 0; row < grid.length; row += 1) {
+      for (let col = 0; col < grid.length; col += 1) {
+        const candidate = { ...entry, row, col, direction };
+
+        if (canPlaceCrosswordEntry(grid, candidate)) {
+          return candidate;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function canPlaceCrosswordEntry(
+  grid: (string | null)[][],
+  placement: Omit<CrosswordPlacement, "number">,
+) {
+  const rowStep = placement.direction === "down" ? 1 : 0;
+  const colStep = placement.direction === "across" ? 1 : 0;
+  const endRow = placement.row + rowStep * (placement.cleanWord.length - 1);
+  const endCol = placement.col + colStep * (placement.cleanWord.length - 1);
+
+  if (
+    placement.row < 0 ||
+    placement.col < 0 ||
+    endRow < 0 ||
+    endCol < 0 ||
+    endRow >= grid.length ||
+    endCol >= grid.length
+  ) {
+    return false;
+  }
+
+  for (let index = 0; index < placement.cleanWord.length; index += 1) {
+    const row = placement.row + rowStep * index;
+    const col = placement.col + colStep * index;
+    const existingLetter = grid[row][col];
+
+    if (existingLetter !== null && existingLetter !== placement.cleanWord[index]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function countCrosswordIntersections(
+  grid: (string | null)[][],
+  placement: Omit<CrosswordPlacement, "number">,
+) {
+  const rowStep = placement.direction === "down" ? 1 : 0;
+  const colStep = placement.direction === "across" ? 1 : 0;
+  let intersections = 0;
+
+  for (let index = 0; index < placement.cleanWord.length; index += 1) {
+    const row = placement.row + rowStep * index;
+    const col = placement.col + colStep * index;
+
+    if (grid[row][col] === placement.cleanWord[index]) {
+      intersections += 1;
+    }
+  }
+
+  return intersections;
+}
+
+function writeCrosswordPlacement(
+  grid: (string | null)[][],
+  placement: Omit<CrosswordPlacement, "number">,
+) {
+  const rowStep = placement.direction === "down" ? 1 : 0;
+  const colStep = placement.direction === "across" ? 1 : 0;
+
+  for (let index = 0; index < placement.cleanWord.length; index += 1) {
+    const row = placement.row + rowStep * index;
+    const col = placement.col + colStep * index;
+    grid[row][col] = placement.cleanWord[index];
+  }
+}
+
+function numberCrosswordPlacements(
+  placements: Omit<CrosswordPlacement, "number">[],
+  numbering: CrosswordNumbering,
+) {
+  if (numbering === "entry-order") {
+    return new Map(
+      placements.map((placement, index) => [`${placement.row}:${placement.col}`, index + 1]),
+    );
+  }
+
+  return new Map(
+    Array.from(new Set(placements.map((placement) => `${placement.row}:${placement.col}`)))
+      .map((key) => {
+        const [row, col] = key.split(":").map(Number);
+        return { key, row, col };
+      })
+      .sort((first, second) => first.row - second.row || first.col - second.col)
+      .map((start, index) => [start.key, index + 1]),
+  );
+}
+
 function slugifyId(value: string) {
   return (
     value
@@ -5456,31 +5681,6 @@ function CrosswordAnswerList({
 
 function sortCrosswordPlacements(first: CrosswordPlacement, second: CrosswordPlacement) {
   return first.number - second.number || first.row - second.row || first.col - second.col;
-}
-
-function buildCrosswordNumbers(
-  placements: CrosswordPlacement[],
-  numbering: CrosswordNumbering,
-) {
-  const numbers = new Map<string, number>();
-
-  if (numbering === "entry-order") {
-    placements.forEach((placement, index) => {
-      numbers.set(`${placement.row}:${placement.col}`, index + 1);
-    });
-    return numbers;
-  }
-
-  const starts = Array.from(
-    new Set(placements.map((placement) => `${placement.row}:${placement.col}`)),
-  ).sort((first, second) => {
-    const [firstRow, firstCol] = first.split(":").map(Number);
-    const [secondRow, secondCol] = second.split(":").map(Number);
-    return firstRow - secondRow || firstCol - secondCol;
-  });
-
-  starts.forEach((start, index) => numbers.set(start, index + 1));
-  return numbers;
 }
 
 function formatCrosswordDisplayWord(word: string, uppercase: boolean) {
