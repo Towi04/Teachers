@@ -4032,7 +4032,8 @@ function MemoryControls({
   );
 }
 
-function MemoryControls({
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function MemoryControlsLegacy({
   bulkText,
   pairs,
   setBulkText,
@@ -6102,7 +6103,7 @@ function MatchingChoiceCard({
   return (
     <div className={`matching-choice-card kind-${item.kind}`}>
       {label ? <span className="matching-choice-label">{label}</span> : null}
-      {showImage ? (
+      {showImage && asset ? (
         <div className={item.kind === "image" ? "matching-card-image" : "matching-card-thumb"}>
           <Image
             src={asset.imageUrl}
