@@ -4726,6 +4726,15 @@ function parseCsvLine(line: string) {
   return cells;
 }
 
+function slugifyId(value: string) {
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "") || "item"
+  );
+}
+
 function generateWordSearchGrid(
   words: string[],
   size: number,

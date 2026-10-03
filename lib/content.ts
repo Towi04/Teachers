@@ -295,7 +295,7 @@ export const activityDefinitions: ActivityDefinition[] = [
     description:
       "Build randomized bingo sheets from vocabulary or pictures.",
     icon: "BG",
-    status: "planned",
+    status: "next",
     inputType: "Word bank",
     outputType: "Multiple boards",
     accent: "#db2777",
