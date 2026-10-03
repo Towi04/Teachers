@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { type ChangeEvent, type ReactNode, useMemo, useState } from "react";
+import { type ChangeEvent, useMemo, useState } from "react";
 import {
   activityDefinitions,
   canPublishSet,
@@ -736,23 +736,6 @@ function ColorPalette({
         ))}
       </div>
     </div>
-  );
-}
-
-function Accordion({
-  children,
-  defaultOpen = false,
-  title,
-}: {
-  children: ReactNode;
-  defaultOpen?: boolean;
-  title: string;
-}) {
-  return (
-    <details className="config-accordion" open={defaultOpen}>
-      <summary>{title}</summary>
-      <div className="accordion-body">{children}</div>
-    </details>
   );
 }
 
