@@ -244,7 +244,7 @@ export const activityDefinitions: ActivityDefinition[] = [
     description:
       "Turn vocabulary and clues into a classroom crossword worksheet.",
     icon: "CW",
-    status: "next",
+    status: "available",
     inputType: "Words + clues",
     outputType: "Puzzle worksheet",
     accent: "#7c3aed",
