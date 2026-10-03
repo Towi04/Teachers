@@ -869,6 +869,19 @@ main {
 
 .layout-side .flashcard {
   grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.layout-side .flashcard-image-wrap {
+  grid-column: 1;
+  grid-row: 1;
+  height: 100%;
+}
+
+.layout-side .flashcard-body {
+  background: var(--card-bg, white);
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .layout-text-first .flashcard {
