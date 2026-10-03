@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   activityDefinitions,
@@ -101,9 +100,9 @@ export function ActivityStudio({
         </>
       ) : (
         <div className="config-header no-print">
-          <Link href="/" className="back-link">
+          <a href="/" className="back-link">
             Back to all tools
-          </Link>
+          </a>
           <p className="eyebrow">Configure activity</p>
           <h1>{selectedActivity?.title}</h1>
           <p>{selectedActivity?.description}</p>
