@@ -62,6 +62,7 @@ export type ActivityId =
   | "bingo"
   | "memory"
   | "reading"
+  | "listening"
   | "quiz";
 
 export type ActivityDefinition = {
@@ -338,6 +339,23 @@ export const activityDefinitions: ActivityDefinition[] = [
       "Question style",
       "Answer space",
       "Teacher key",
+    ],
+  },
+  {
+    id: "listening",
+    title: "Create listening worksheets",
+    description:
+      "Embed a YouTube video, add lyrics or a script, define vocabulary, and build richer listening tasks.",
+    icon: "LS",
+    status: "next",
+    inputType: "Video + script",
+    outputType: "Listening worksheet",
+    accent: "#dc2626",
+    configurationHighlights: [
+      "YouTube link",
+      "Lyrics/script",
+      "Vocabulary tasks",
+      "Answer key",
     ],
   },
   {

@@ -252,6 +252,20 @@ type MemoryCardPreviewItem = {
 type QuizQuestionType = "multiple-choice" | "true-false" | "short-answer";
 type QuizNumberingStyle = "numbers" | "letters" | "none";
 type QuizQuestionSpacing = "compact" | "comfortable" | "wide";
+type ListeningTab = "title" | "script" | "vocabulary" | "tasks" | "design-page";
+type ListeningVocabularyExercise =
+  | "matching"
+  | "sentence-completion"
+  | "write-a-sentence"
+  | "image-match";
+type ListeningTaskKey =
+  | "missingWords"
+  | "missingVowels"
+  | "sentenceOrdering"
+  | "minimalPairs"
+  | "extraWordDeletion"
+  | "verbConjugation"
+  | "shuffledStanzas";
 
 type QuizQuestion = {
   id: string;
@@ -278,6 +292,31 @@ type QuizSettings = {
   showScoreBoxes: boolean;
   textColor: string;
   writtenAnswerLines: number;
+};
+
+type ListeningVocabularyItem = {
+  id: string;
+  word: string;
+  definition: string;
+  imagePrompt: string;
+  exerciseType: ListeningVocabularyExercise;
+};
+
+type ListeningSettings = {
+  accentColor: string;
+  backgroundColor: string;
+  borderColor: string;
+  fontStyle: FontStyle;
+  instructions: string;
+  orientation: Orientation;
+  publicPrivateNote: string;
+  sheetSize: SheetSize;
+  showAnswerKey: boolean;
+  splitStanzas: boolean;
+  tasks: Record<ListeningTaskKey, boolean>;
+  textColor: string;
+  title: string;
+  videoUrl: string;
 };
 
 const frameColors = ["#f97316", "#2563eb", "#16a34a", "#db2777", "#111827"];
@@ -340,6 +379,56 @@ const quizSpacingOptions: {
   { key: "compact", label: "Compact" },
   { key: "comfortable", label: "Comfortable" },
   { key: "wide", label: "Wide" },
+];
+const listeningVocabularyExerciseOptions: {
+  key: ListeningVocabularyExercise;
+  label: string;
+}[] = [
+  { key: "matching", label: "Matching" },
+  { key: "sentence-completion", label: "Sentence completion" },
+  { key: "write-a-sentence", label: "Write a sentence" },
+  { key: "image-match", label: "Image match" },
+];
+const listeningTaskOptions: {
+  key: ListeningTaskKey;
+  label: string;
+  description: string;
+}[] = [
+  {
+    key: "missingWords",
+    label: "Missing full words",
+    description: "Blank target words from the script for focused listening.",
+  },
+  {
+    key: "missingVowels",
+    label: "Missing vowels",
+    description: "Leave consonant frames so students rebuild key words.",
+  },
+  {
+    key: "sentenceOrdering",
+    label: "Sentence ordering",
+    description: "Number mixed-up script lines in the order students hear them.",
+  },
+  {
+    key: "minimalPairs",
+    label: "Minimal pairs",
+    description: "Add night/nine style discrimination prompts.",
+  },
+  {
+    key: "extraWordDeletion",
+    label: "Extra-word deletion",
+    description: "Students cross out words that do not belong in the line.",
+  },
+  {
+    key: "verbConjugation",
+    label: "Verb conjugation",
+    description: "Give infinitives and let learners write the heard form.",
+  },
+  {
+    key: "shuffledStanzas",
+    label: "Shuffled stanzas",
+    description: "Arrange verse or scene blocks after listening.",
+  },
 ];
 const matchingModeOptions: {
   key: MatchingMode;
@@ -583,6 +672,49 @@ const defaultQuizSettings: QuizSettings = {
   writtenAnswerLines: 3,
 };
 
+function buildDefaultListeningSettings(title: string): ListeningSettings {
+  return {
+    accentColor: "#dc2626",
+    backgroundColor: "#ffffff",
+    borderColor: "#fecaca",
+    fontStyle: "rounded",
+    instructions:
+      "Watch or listen twice. Complete the tasks, then compare answers with a partner.",
+    orientation: "portrait",
+    publicPrivateNote:
+      "Keep copyrighted songs, lyrics, and third-party video content private unless you have permission to share.",
+    sheetSize: "letter",
+    showAnswerKey: true,
+    splitStanzas: true,
+    tasks: {
+      missingWords: true,
+      missingVowels: false,
+      sentenceOrdering: true,
+      minimalPairs: true,
+      extraWordDeletion: false,
+      verbConjugation: true,
+      shuffledStanzas: false,
+    },
+    textColor: "#172033",
+    title: `${title} Listening Worksheet`,
+    videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  };
+}
+
+function buildDefaultListeningVocabulary(
+  items: VocabularySet["items"],
+): ListeningVocabularyItem[] {
+  return items.map((item, index) => ({
+    id: `listening-vocab-${item.id}`,
+    word: item.word,
+    definition: item.definition,
+    imagePrompt: item.example || `Simple classroom image for ${item.word}`,
+    exerciseType: listeningVocabularyExerciseOptions[
+      index % listeningVocabularyExerciseOptions.length
+    ].key,
+  }));
+}
+
 export function ActivityStudio({
   initialActivityId = "flashcards",
   initialSet,
@@ -705,6 +837,21 @@ export function ActivityStudio({
   );
   const [quizSettings, setQuizSettings] =
     useState<QuizSettings>(defaultQuizSettings);
+  const [listeningScript, setListeningScript] = useState(
+    [
+      "I run to the park when the morning is bright.",
+      "I read every sign and I write what I see.",
+      "",
+      "Listen to the city, listen to the street.",
+      "Every little sound is a word for me.",
+    ].join("\n"),
+  );
+  const [listeningVocabulary, setListeningVocabulary] = useState<
+    ListeningVocabularyItem[]
+  >(() => buildDefaultListeningVocabulary(initialSet.items));
+  const [listeningSettings, setListeningSettings] = useState<ListeningSettings>(() =>
+    buildDefaultListeningSettings(initialSet.title),
+  );
 
   const selectedActivity = activityDefinitions.find(
     (activity) => activity.id === selectedActivityId,
@@ -716,6 +863,7 @@ export function ActivityStudio({
   const isMatching = selectedActivityId === "matching";
   const isMemory = selectedActivityId === "memory";
   const isQuiz = selectedActivityId === "quiz";
+  const isListening = selectedActivityId === "listening";
 
   const publicReady = useMemo(() => canPublishSet(initialSet), [initialSet]);
   const canPublish = visibility === "private" || publicReady;
@@ -731,6 +879,7 @@ export function ActivityStudio({
         isMatching ? "matching-mode" : "",
         isMemory ? "memory-mode" : "",
         isQuiz ? "quiz-mode" : "",
+        isListening ? "listening-mode" : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -943,6 +1092,15 @@ export function ActivityStudio({
               setSettings={setQuizSettings}
               settings={quizSettings}
             />
+          ) : isListening ? (
+            <ListeningControls
+              script={listeningScript}
+              setScript={setListeningScript}
+              setSettings={setListeningSettings}
+              setVocabulary={setListeningVocabulary}
+              settings={listeningSettings}
+              vocabulary={listeningVocabulary}
+            />
           ) : (
             <PlannedActivityControls activityId={selectedActivityId} />
           )}
@@ -1016,6 +1174,12 @@ export function ActivityStudio({
               materialTitle={materialTitle}
               questions={quizQuestions}
               settings={quizSettings}
+            />
+          ) : isListening ? (
+            <ListeningPreview
+              script={listeningScript}
+              settings={listeningSettings}
+              vocabulary={listeningVocabulary}
             />
           ) : (
             <PlannedActivityPreview activityId={selectedActivityId} />
@@ -2682,6 +2846,354 @@ function QuizControls({
             <p className="policy-note">
               Hide the key for a student copy, or keep it visible for teacher printing.
             </p>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ListeningControls({
+  script,
+  setScript,
+  setSettings,
+  setVocabulary,
+  settings,
+  vocabulary,
+}: {
+  script: string;
+  setScript: (script: string) => void;
+  setSettings: (settings: ListeningSettings) => void;
+  setVocabulary: (vocabulary: ListeningVocabularyItem[]) => void;
+  settings: ListeningSettings;
+  vocabulary: ListeningVocabularyItem[];
+}) {
+  const [activeTab, setActiveTab] = useState<ListeningTab>("title");
+
+  const updateSettings = (updates: Partial<ListeningSettings>) => {
+    setSettings({ ...settings, ...updates });
+  };
+  const updateVocabularyItem = (
+    itemId: string,
+    updates: Partial<ListeningVocabularyItem>,
+  ) => {
+    setVocabulary(
+      vocabulary.map((item) => (item.id === itemId ? { ...item, ...updates } : item)),
+    );
+  };
+  const addVocabularyItem = () => {
+    setVocabulary([
+      ...vocabulary,
+      {
+        id: `listening-vocab-custom-${vocabulary.length + 1}`,
+        word: "",
+        definition: "",
+        imagePrompt: "",
+        exerciseType: "matching",
+      },
+    ]);
+  };
+  const removeVocabularyItem = (itemId: string) => {
+    if (vocabulary.length <= 1) {
+      return;
+    }
+
+    setVocabulary(vocabulary.filter((item) => item.id !== itemId));
+  };
+  const downloadScriptTemplate = () => {
+    const text = [
+      "Title: Listening worksheet script",
+      "",
+      "[Verse or scene 1]",
+      "Paste the first stanza, scene, or transcript section here.",
+      "",
+      "[Verse or scene 2]",
+      "Leave blank lines between stanzas if you want shuffled stanza tasks.",
+    ].join("\n");
+    const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "myownmaterials-listening-script-template.txt";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+  const toggleTask = (task: ListeningTaskKey) => {
+    updateSettings({
+      tasks: {
+        ...settings.tasks,
+        [task]: !settings.tasks[task],
+      },
+    });
+  };
+  const activeTaskCount = Object.values(settings.tasks).filter(Boolean).length;
+  const stanzas = splitListeningStanzas(script, settings.splitStanzas);
+
+  return (
+    <div className="tabbed-config listening-config">
+      <div className="tab-list" role="tablist" aria-label="Listening worksheet settings">
+        {([
+          ["title", "Title"],
+          ["script", "Script"],
+          ["vocabulary", "Vocabulary"],
+          ["tasks", "Listening tasks"],
+          ["design-page", "Design/Page"],
+        ] as const).map(([tab, label]) => (
+          <button
+            aria-selected={activeTab === tab}
+            className={activeTab === tab ? "active" : ""}
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            role="tab"
+            type="button"
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="tab-panel" role="tabpanel">
+        {activeTab === "title" ? (
+          <>
+            <label className="field-stack">
+              <span>Worksheet title</span>
+              <input
+                onChange={(event) => updateSettings({ title: event.target.value })}
+                placeholder="Song or video listening worksheet"
+                type="text"
+                value={settings.title}
+              />
+            </label>
+            <label className="field-stack">
+              <span>YouTube video URL or embed link</span>
+              <input
+                onChange={(event) => updateSettings({ videoUrl: event.target.value })}
+                placeholder="https://www.youtube.com/watch?v=..."
+                type="url"
+                value={settings.videoUrl}
+              />
+            </label>
+            <label className="field-stack">
+              <span>Student instructions</span>
+              <textarea
+                onChange={(event) => updateSettings({ instructions: event.target.value })}
+                rows={4}
+                value={settings.instructions}
+              />
+            </label>
+            <label className="field-stack">
+              <span>Public/private note</span>
+              <textarea
+                onChange={(event) =>
+                  updateSettings({ publicPrivateNote: event.target.value })
+                }
+                rows={3}
+                value={settings.publicPrivateNote}
+              />
+            </label>
+          </>
+        ) : null}
+
+        {activeTab === "script" ? (
+          <>
+            <div className="csv-actions">
+              <button className="secondary-button" onClick={downloadScriptTemplate} type="button">
+                Download script template
+              </button>
+              <button
+                className={settings.splitStanzas ? "toggle-row active" : "toggle-row"}
+                onClick={() => updateSettings({ splitStanzas: !settings.splitStanzas })}
+                type="button"
+              >
+                Split by blank lines
+              </button>
+            </div>
+            <label className="field-stack">
+              <span>Lyrics or video script</span>
+              <textarea
+                onChange={(event) => setScript(event.target.value)}
+                placeholder="Paste the lyrics, transcript, or teacher-made script here."
+                rows={12}
+                value={script}
+              />
+            </label>
+            <div className="script-stanza-summary">
+              {stanzas.slice(0, 4).map((stanza, index) => (
+                <span key={`stanza-${index}`}>
+                  {settings.splitStanzas ? `Stanza ${index + 1}` : `Line group ${index + 1}`} ·{" "}
+                  {stanza.length} line{stanza.length === 1 ? "" : "s"}
+                </span>
+              ))}
+            </div>
+            <p className="policy-note">
+              Paste only content you are allowed to use. The printable preview summarizes
+              the script and generates task examples without embedding the video player.
+            </p>
+          </>
+        ) : null}
+
+        {activeTab === "vocabulary" ? (
+          <>
+            <div className="editable-table listening-vocabulary-table">
+              {vocabulary.map((item, index) => (
+                <div className="editable-row listening-vocabulary-row" key={item.id}>
+                  <input
+                    aria-label={`Vocabulary word ${index + 1}`}
+                    onChange={(event) =>
+                      updateVocabularyItem(item.id, { word: event.target.value })
+                    }
+                    placeholder="Word"
+                    value={item.word}
+                  />
+                  <input
+                    aria-label={`Definition for vocabulary word ${index + 1}`}
+                    onChange={(event) =>
+                      updateVocabularyItem(item.id, { definition: event.target.value })
+                    }
+                    placeholder="Definition"
+                    value={item.definition}
+                  />
+                  <input
+                    aria-label={`Image or prompt for vocabulary word ${index + 1}`}
+                    onChange={(event) =>
+                      updateVocabularyItem(item.id, { imagePrompt: event.target.value })
+                    }
+                    placeholder="Image/prompt placeholder"
+                    value={item.imagePrompt}
+                  />
+                  <select
+                    aria-label={`Exercise type for vocabulary word ${index + 1}`}
+                    onChange={(event) =>
+                      updateVocabularyItem(item.id, {
+                        exerciseType: event.target.value as ListeningVocabularyExercise,
+                      })
+                    }
+                    value={item.exerciseType}
+                  >
+                    {listeningVocabularyExerciseOptions.map((option) => (
+                      <option key={option.key} value={option.key}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    className="text-button"
+                    onClick={() => removeVocabularyItem(item.id)}
+                    type="button"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button className="secondary-button" onClick={addVocabularyItem} type="button">
+              Add vocabulary row
+            </button>
+            <p className="policy-note">
+              Vocabulary rows can become matching prompts, sentence completions, writing
+              tasks, or image-match cues in the printable worksheet.
+            </p>
+          </>
+        ) : null}
+
+        {activeTab === "tasks" ? (
+          <>
+            <div className="listening-task-list">
+              {listeningTaskOptions.map((option) => (
+                <button
+                  className={settings.tasks[option.key] ? "toggle-row active" : "toggle-row"}
+                  key={option.key}
+                  onClick={() => toggleTask(option.key)}
+                  type="button"
+                >
+                  <strong>{option.label}</strong>
+                  <span>{option.description}</span>
+                </button>
+              ))}
+            </div>
+            <p className="policy-note">
+              {activeTaskCount} listening section{activeTaskCount === 1 ? "" : "s"} selected.
+              The preview shows examples; the full worksheet would expand each enabled
+              section from the complete script and vocabulary list.
+            </p>
+          </>
+        ) : null}
+
+        {activeTab === "design-page" ? (
+          <>
+            <h4>Sheet</h4>
+            <div className="segmented">
+              <button
+                className={settings.orientation === "portrait" ? "active" : ""}
+                onClick={() => updateSettings({ orientation: "portrait" })}
+                type="button"
+              >
+                Portrait
+              </button>
+              <button
+                className={settings.orientation === "landscape" ? "active" : ""}
+                onClick={() => updateSettings({ orientation: "landscape" })}
+                type="button"
+              >
+                Landscape
+              </button>
+            </div>
+            <div className="sheet-size-list">
+              {(["letter", "a4", "legal"] as SheetSize[]).map((size) => (
+                <button
+                  className={settings.sheetSize === size ? "plan-option active" : "plan-option"}
+                  key={size}
+                  onClick={() => updateSettings({ sheetSize: size })}
+                  type="button"
+                >
+                  <strong>{size.toUpperCase()}</strong>
+                  <small>{size === "letter" ? "US classrooms" : "Printable page"}</small>
+                </button>
+              ))}
+            </div>
+            <h4>Font</h4>
+            <div className="segmented three">
+              {(["rounded", "classic", "bold"] as FontStyle[]).map((font) => (
+                <button
+                  className={settings.fontStyle === font ? "active" : ""}
+                  key={font}
+                  onClick={() => updateSettings({ fontStyle: font })}
+                  type="button"
+                >
+                  {font}
+                </button>
+              ))}
+            </div>
+            <ColorPalette
+              colors={backgroundColors}
+              label="Background"
+              selectedColor={settings.backgroundColor}
+              onSelect={(backgroundColor) => updateSettings({ backgroundColor })}
+            />
+            <ColorPalette
+              colors={["#fecaca", "#dc2626", "#f97316", "#7c3aed", "#0891b2", "#111827"]}
+              label="Border"
+              selectedColor={settings.borderColor}
+              onSelect={(borderColor) => updateSettings({ borderColor })}
+            />
+            <ColorPalette
+              colors={textColors}
+              label="Text"
+              selectedColor={settings.textColor}
+              onSelect={(textColor) => updateSettings({ textColor })}
+            />
+            <ColorPalette
+              colors={["#dc2626", "#f97316", "#7c3aed", "#0891b2", "#16a34a", "#db2777"]}
+              label="Accent"
+              selectedColor={settings.accentColor}
+              onSelect={(accentColor) => updateSettings({ accentColor })}
+            />
+            <button
+              className={settings.showAnswerKey ? "toggle-row active" : "toggle-row"}
+              onClick={() => updateSettings({ showAnswerKey: !settings.showAnswerKey })}
+              type="button"
+            >
+              Show answer key
+            </button>
           </>
         ) : null}
       </div>
@@ -4693,6 +5205,164 @@ function formatQuizQuestionNumber(index: number, style: QuizNumberingStyle) {
   return `${index + 1}.`;
 }
 
+function parseYouTubeVideoId(value: string) {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return "";
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    const hostname = parsed.hostname.replace(/^www\./, "");
+
+    if (hostname === "youtu.be") {
+      return parsed.pathname.split("/").filter(Boolean)[0] ?? "";
+    }
+
+    if (hostname.endsWith("youtube.com")) {
+      const watchId = parsed.searchParams.get("v");
+
+      if (watchId) {
+        return watchId;
+      }
+
+      const [kind, id] = parsed.pathname.split("/").filter(Boolean);
+
+      if (["embed", "shorts", "live"].includes(kind) && id) {
+        return id;
+      }
+    }
+  } catch {
+    const fallback = trimmed.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([A-Za-z0-9_-]{6,})/);
+    return fallback?.[1] ?? "";
+  }
+
+  return "";
+}
+
+function getListeningScriptLines(script: string) {
+  return script
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function splitListeningStanzas(script: string, splitByBlankLines: boolean) {
+  if (!splitByBlankLines) {
+    return getListeningScriptLines(script).map((line) => [line]);
+  }
+
+  const stanzas = script
+    .split(/\n\s*\n/)
+    .map((stanza) => getListeningScriptLines(stanza))
+    .filter((stanza) => stanza.length > 0);
+
+  return stanzas.length > 0 ? stanzas : [[]];
+}
+
+function getListeningTaskExample(
+  task: ListeningTaskKey,
+  scriptLines: string[],
+  vocabulary: ListeningVocabularyItem[],
+  stanzas: string[][],
+) {
+  const option = listeningTaskOptions.find((item) => item.key === task);
+  const firstLine = scriptLines[0] ?? "Students listen to the video and complete the line.";
+  const secondLine = scriptLines[1] ?? "Then they check the meaning with a partner.";
+  const firstWord = vocabulary.find((item) => item.word.trim())?.word.trim() || "listen";
+  const secondWord = vocabulary.find((item) => item.word.trim() && item.word !== firstWord)
+    ?.word.trim() || "lesson";
+
+  switch (task) {
+    case "missingWords":
+      return {
+        key: task,
+        label: option?.label ?? "Missing full words",
+        prompt: "Fill in the missing words.",
+        sample: blankListeningTargetWords(firstLine, [firstWord]),
+      };
+    case "missingVowels":
+      return {
+        key: task,
+        label: option?.label ?? "Missing vowels",
+        prompt: "Add the missing vowels.",
+        sample: `${removeVowels(firstWord)} = ${"_".repeat(Math.max(firstWord.length, 4))}`,
+      };
+    case "sentenceOrdering":
+      return {
+        key: task,
+        label: option?.label ?? "Sentence ordering",
+        prompt: "Number the lines in the order you hear them.",
+        sample: `___ ${secondLine} / ___ ${firstLine}`,
+      };
+    case "minimalPairs":
+      return {
+        key: task,
+        label: option?.label ?? "Minimal pairs",
+        prompt: "Circle the word you hear.",
+        sample: `${firstWord} / ${secondWord}`,
+      };
+    case "extraWordDeletion":
+      return {
+        key: task,
+        label: option?.label ?? "Extra-word deletion",
+        prompt: "Cross out the extra word.",
+        sample: addExtraListeningWord(firstLine),
+      };
+    case "verbConjugation":
+      return {
+        key: task,
+        label: option?.label ?? "Verb conjugation",
+        prompt: "Write the verb form you hear.",
+        sample: `to ${firstWord.toLowerCase()} -> __________________`,
+      };
+    case "shuffledStanzas":
+      return {
+        key: task,
+        label: option?.label ?? "Shuffled stanzas",
+        prompt: "Put the stanzas in order.",
+        sample:
+          stanzas.length > 1
+            ? stanzas
+                .slice(0, 3)
+                .map((stanza, index) => `${String.fromCharCode(65 + index)}. ${stanza[0]}`)
+                .join(" / ")
+            : "A. First stanza / B. Second stanza / C. Final stanza",
+      };
+  }
+}
+
+function blankListeningTargetWords(line: string, targetWords: string[]) {
+  let result = line;
+
+  targetWords.forEach((word) => {
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    result = result.replace(new RegExp(`\\b${escaped}\\b`, "i"), "__________");
+  });
+
+  if (result === line) {
+    return line.replace(/\b\w{4,}\b/, "__________");
+  }
+
+  return result;
+}
+
+function removeVowels(value: string) {
+  return value.replace(/[aeiou]/gi, "_");
+}
+
+function addExtraListeningWord(line: string) {
+  const words = line.split(/\s+/);
+
+  if (words.length < 3) {
+    return `${line} really`;
+  }
+
+  const insertAt = Math.min(3, words.length - 1);
+  return [...words.slice(0, insertAt), "really", ...words.slice(insertAt)].join(" ");
+}
+
 function uniqueStrings(values: string[]) {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
 }
@@ -6131,6 +6801,182 @@ function QuizPreview({
         <span>
           Preview shows up to five questions from the bank; the full printable quiz would
           include every configured question.
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function ListeningPreview({
+  script,
+  settings,
+  vocabulary,
+}: {
+  script: string;
+  settings: ListeningSettings;
+  vocabulary: ListeningVocabularyItem[];
+}) {
+  const videoId = parseYouTubeVideoId(settings.videoUrl);
+  const scriptLines = useMemo(() => getListeningScriptLines(script), [script]);
+  const stanzas = useMemo(
+    () => splitListeningStanzas(script, settings.splitStanzas),
+    [script, settings.splitStanzas],
+  );
+  const activeTasks = listeningTaskOptions.filter((option) => settings.tasks[option.key]);
+  const taskExamples = activeTasks.slice(0, 6).map((option) =>
+    getListeningTaskExample(option.key, scriptLines, vocabulary, stanzas),
+  );
+  const usableVocabulary = vocabulary.filter((item) => item.word.trim()).slice(0, 6);
+
+  return (
+    <div className="sheet-preview-stack listening-preview-stack">
+      <section className={`listening-page sheet-${settings.sheetSize} ${settings.orientation}`}>
+        <div className="preview-side-label">
+          <span>Listening worksheet preview</span>
+          <small>
+            {settings.sheetSize.toUpperCase()} · {settings.orientation}
+          </small>
+        </div>
+        <article
+          className={`listening-sheet font-${settings.fontStyle}`}
+          style={
+            {
+              "--listening-accent": settings.accentColor,
+              "--listening-bg": settings.backgroundColor,
+              "--listening-border": settings.borderColor,
+              "--listening-text": settings.textColor,
+            } as React.CSSProperties
+          }
+        >
+          <header className="listening-header">
+            <div>
+              <p className="eyebrow">Video listening worksheet</p>
+              <h2>{settings.title || "Untitled listening worksheet"}</h2>
+              <p>{settings.instructions}</p>
+            </div>
+            <div className="listening-name-box">
+              <span>Name</span>
+              <i />
+              <span>Date</span>
+              <i />
+            </div>
+          </header>
+
+          <section className="listening-video-card">
+            <div className="listening-play-icon" aria-hidden="true">
+              <span />
+            </div>
+            <div>
+              <strong>YouTube video reference</strong>
+              <p>
+                {videoId
+                  ? `Video ID: ${videoId}`
+                  : "Paste a YouTube URL or embed link to show a video ID here."}
+              </p>
+              <small>No iframe is embedded in the printable preview.</small>
+            </div>
+          </section>
+
+          <section className="listening-summary-grid">
+            <div>
+              <strong>{scriptLines.length}</strong>
+              <span>script line{scriptLines.length === 1 ? "" : "s"}</span>
+            </div>
+            <div>
+              <strong>{usableVocabulary.length}</strong>
+              <span>vocabulary item{usableVocabulary.length === 1 ? "" : "s"}</span>
+            </div>
+            <div>
+              <strong>{activeTasks.length}</strong>
+              <span>listening section{activeTasks.length === 1 ? "" : "s"}</span>
+            </div>
+          </section>
+
+          {usableVocabulary.length > 0 ? (
+            <section className="listening-vocab-preview">
+              <div className="listening-section-heading">
+                <h3>Vocabulary from the video</h3>
+                <span>Before listening</span>
+              </div>
+              <div className="listening-vocab-grid">
+                {usableVocabulary.map((item) => (
+                  <article key={`listening-preview-${item.id}`}>
+                    <strong>{item.word}</strong>
+                    <p>{item.definition || "Teacher definition"}</p>
+                    <small>
+                      {
+                        listeningVocabularyExerciseOptions.find(
+                          (option) => option.key === item.exerciseType,
+                        )?.label
+                      }
+                    </small>
+                    {item.imagePrompt ? <em>{item.imagePrompt}</em> : null}
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <section className="listening-task-preview">
+            <div className="listening-section-heading">
+              <h3>Listening tasks</h3>
+              <span>During listening</span>
+            </div>
+            <div className="listening-task-preview-list">
+              {taskExamples.length > 0 ? (
+                taskExamples.map((example) => (
+                  <article key={example.key}>
+                    <span>{example.label}</span>
+                    <strong>{example.prompt}</strong>
+                    <p>{example.sample}</p>
+                  </article>
+                ))
+              ) : (
+                <article>
+                  <span>Task bank</span>
+                  <strong>Select at least one listening task.</strong>
+                  <p>Enabled sections will appear here as worksheet examples.</p>
+                </article>
+              )}
+            </div>
+          </section>
+
+          <section className="listening-script-preview">
+            <div className="listening-section-heading">
+              <h3>Script excerpt</h3>
+              <span>{settings.splitStanzas ? "Stanzas" : "Lines"}</span>
+            </div>
+            <ol>
+              {scriptLines.slice(0, 5).map((line, index) => (
+                <li key={`script-line-${index}`}>{line}</li>
+              ))}
+            </ol>
+          </section>
+
+          {settings.showAnswerKey ? (
+            <aside className="listening-answer-key-preview">
+              <h3>Teacher answer key</h3>
+              <div>
+                <span>
+                  <strong>Target words:</strong>{" "}
+                  {usableVocabulary.map((item) => item.word).join(", ") || "Add vocabulary"}
+                </span>
+                <span>
+                  <strong>Stanzas:</strong> {stanzas.length}
+                </span>
+                <span>
+                  <strong>Video ID:</strong> {videoId || "No YouTube ID yet"}
+                </span>
+              </div>
+            </aside>
+          ) : null}
+        </article>
+      </section>
+      <div className="full-preview-note">
+        <strong>{settings.title}</strong>
+        <span>
+          Preview summarizes the video reference, vocabulary, selected listening tasks,
+          script excerpt, and optional teacher key for printing.
         </span>
       </div>
     </div>
