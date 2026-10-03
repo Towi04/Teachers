@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   activityDefinitions,
@@ -15,6 +16,8 @@ import {
 
 type ActivityStudioProps = {
   initialSet: VocabularySet;
+  initialActivityId?: ActivityId;
+  showPicker?: boolean;
 };
 
 type CardSize = "small" | "medium" | "large";
@@ -23,9 +26,13 @@ type FontStyle = "rounded" | "classic" | "bold";
 
 const frameColors = ["#f97316", "#2563eb", "#16a34a", "#db2777", "#111827"];
 
-export function ActivityStudio({ initialSet }: ActivityStudioProps) {
+export function ActivityStudio({
+  initialActivityId = "flashcards",
+  initialSet,
+  showPicker = true,
+}: ActivityStudioProps) {
   const [selectedActivityId, setSelectedActivityId] =
-    useState<ActivityId>("flashcards");
+    useState<ActivityId>(initialActivityId);
   const [selectedPlanId, setSelectedPlanId] =
     useState<PlanTier["id"]>("free");
   const [visibility, setVisibility] = useState(initialSet.visibility);
@@ -47,45 +54,61 @@ export function ActivityStudio({ initialSet }: ActivityStudioProps) {
 
   return (
     <section className="activity-studio" id="create">
-      <div className="section-heading">
-        <p className="eyebrow">Create materials</p>
-        <h2>Choose what you want to create.</h2>
-        <p>
-          Start from the activity you need. Each card will open its own
-          configuration panel, so teachers do not have to hunt through one large
-          editor.
-        </p>
-      </div>
+      {showPicker ? (
+        <>
+          <div className="section-heading">
+            <p className="eyebrow">Create materials</p>
+            <h2>Choose what you want to create.</h2>
+            <p>
+              Start from the activity you need. Each card will open its own
+              configuration panel, so teachers do not have to hunt through one
+              large editor.
+            </p>
+          </div>
 
-      <div className="activity-picker no-print">
-        {activityDefinitions.map((activity) => (
-          <button
-            className={
-              selectedActivityId === activity.id
-                ? "activity-card active"
-                : "activity-card"
-            }
-            key={activity.id}
-            onClick={() => setSelectedActivityId(activity.id)}
-            style={{ "--activity-accent": activity.accent } as React.CSSProperties}
-            type="button"
-          >
-            <span className={`activity-status status-${activity.status}`}>
-              {activity.status === "available"
-                ? "Available"
-                : activity.status === "next"
-                  ? "Next"
-                  : "Planned"}
-            </span>
-            <h3>{activity.title}</h3>
-            <p>{activity.description}</p>
-            <div>
-              <small>{activity.inputType}</small>
-              <small>{activity.outputType}</small>
-            </div>
-          </button>
-        ))}
-      </div>
+          <div className="activity-picker no-print">
+            {activityDefinitions.map((activity) => (
+              <button
+                className={
+                  selectedActivityId === activity.id
+                    ? "activity-card active"
+                    : "activity-card"
+                }
+                key={activity.id}
+                onClick={() => setSelectedActivityId(activity.id)}
+                style={
+                  { "--activity-accent": activity.accent } as React.CSSProperties
+                }
+                type="button"
+              >
+                <span className="tool-icon">{activity.icon}</span>
+                <span className={`activity-status status-${activity.status}`}>
+                  {activity.status === "available"
+                    ? "Available"
+                    : activity.status === "next"
+                      ? "Next"
+                      : "Planned"}
+                </span>
+                <h3>{activity.title}</h3>
+                <p>{activity.description}</p>
+                <div>
+                  <small>{activity.inputType}</small>
+                  <small>{activity.outputType}</small>
+                </div>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="config-header no-print">
+          <Link href="/" className="back-link">
+            Back to all tools
+          </Link>
+          <p className="eyebrow">Configure activity</p>
+          <h1>{selectedActivity?.title}</h1>
+          <p>{selectedActivity?.description}</p>
+        </div>
+      )}
 
       <div className="studio-grid">
         <aside

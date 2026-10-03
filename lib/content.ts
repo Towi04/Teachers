@@ -68,6 +68,7 @@ export type ActivityDefinition = {
   id: ActivityId;
   title: string;
   description: string;
+  icon: string;
   status: "available" | "next" | "planned";
   inputType: string;
   outputType: string;
@@ -225,6 +226,7 @@ export const activityDefinitions: ActivityDefinition[] = [
     title: "Create flashcards",
     description:
       "Design printable cards with words, images, examples, and optional back sides.",
+    icon: "FC",
     status: "available",
     inputType: "Vocabulary + images",
     outputType: "Printable cards",
@@ -241,6 +243,7 @@ export const activityDefinitions: ActivityDefinition[] = [
     title: "Create a crossword",
     description:
       "Turn vocabulary and clues into a classroom crossword worksheet.",
+    icon: "CW",
     status: "next",
     inputType: "Words + clues",
     outputType: "Puzzle worksheet",
@@ -257,6 +260,7 @@ export const activityDefinitions: ActivityDefinition[] = [
     title: "Create a word search",
     description:
       "Generate a hidden-word activity from any vocabulary list.",
+    icon: "WS",
     status: "next",
     inputType: "Vocabulary list",
     outputType: "Word puzzle",
@@ -273,6 +277,7 @@ export const activityDefinitions: ActivityDefinition[] = [
     title: "Create matching cards",
     description:
       "Match words to images, definitions, translations, or examples.",
+    icon: "MT",
     status: "planned",
     inputType: "Pairs",
     outputType: "Cut-out activity",
@@ -289,6 +294,7 @@ export const activityDefinitions: ActivityDefinition[] = [
     title: "Create bingo boards",
     description:
       "Build randomized bingo sheets from vocabulary or pictures.",
+    icon: "BG",
     status: "planned",
     inputType: "Word bank",
     outputType: "Multiple boards",
@@ -305,6 +311,7 @@ export const activityDefinitions: ActivityDefinition[] = [
     title: "Create memory cards",
     description:
       "Prepare matching cards for vocabulary, pictures, and definitions.",
+    icon: "MM",
     status: "planned",
     inputType: "Pairs",
     outputType: "Card game",
@@ -321,6 +328,7 @@ export const activityDefinitions: ActivityDefinition[] = [
     title: "Create a reading worksheet",
     description:
       "Place a text and questions into a clean printable template.",
+    icon: "RD",
     status: "planned",
     inputType: "Text + questions",
     outputType: "Worksheet",
@@ -337,6 +345,7 @@ export const activityDefinitions: ActivityDefinition[] = [
     title: "Create a printable quiz",
     description:
       "Format multiple-choice, true/false, or short-answer questions.",
+    icon: "QZ",
     status: "planned",
     inputType: "Question bank",
     outputType: "Assessment",

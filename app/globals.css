@@ -49,6 +49,12 @@ main {
   min-height: 100vh;
 }
 
+.tool-home {
+  background:
+    radial-gradient(circle at top, rgba(249, 115, 22, 0.13), transparent 28rem),
+    var(--background);
+}
+
 .topbar {
   align-items: center;
   backdrop-filter: blur(18px);
@@ -84,6 +90,103 @@ main {
   gap: clamp(2rem, 5vw, 5rem);
   grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
   padding: clamp(3rem, 8vw, 7rem) clamp(1rem, 4vw, 4rem) 3rem;
+}
+
+.tools-hero {
+  margin: 0 auto;
+  max-width: 62rem;
+  padding: clamp(3rem, 8vw, 6rem) clamp(1rem, 4vw, 4rem) 2rem;
+  text-align: center;
+}
+
+.tools-hero h1 {
+  font-size: clamp(2.8rem, 7vw, 6.6rem);
+  letter-spacing: -0.07em;
+  line-height: 0.95;
+  margin: 0;
+}
+
+.tools-hero p:not(.eyebrow) {
+  color: var(--muted);
+  font-size: 1.15rem;
+  line-height: 1.7;
+  margin: 1.25rem auto 0;
+  max-width: 44rem;
+}
+
+.tool-grid-section {
+  margin: 0 auto;
+  max-width: 78rem;
+  padding: 1rem clamp(1rem, 4vw, 4rem) clamp(4rem, 8vw, 7rem);
+}
+
+.tool-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.tool-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 1.15rem;
+  box-shadow: 0 14px 34px rgba(38, 31, 24, 0.08);
+  display: grid;
+  gap: 1rem;
+  min-height: 14.5rem;
+  padding: 1.25rem;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.tool-card:hover {
+  border-color: var(--activity-accent);
+  box-shadow: 0 24px 60px rgba(38, 31, 24, 0.14);
+  transform: translateY(-3px);
+}
+
+.tool-card h2 {
+  font-size: 1.2rem;
+  letter-spacing: -0.04em;
+  margin: 0;
+}
+
+.tool-card p {
+  color: var(--muted);
+  line-height: 1.45;
+  margin: 0.45rem 0 0;
+}
+
+.tool-icon {
+  align-items: center;
+  background: color-mix(in srgb, var(--activity-accent), white 84%);
+  border: 1px solid color-mix(in srgb, var(--activity-accent), white 55%);
+  border-radius: 1rem;
+  color: var(--activity-accent);
+  display: inline-flex;
+  font-size: 0.95rem;
+  font-weight: 1000;
+  height: 3rem;
+  justify-content: center;
+  letter-spacing: -0.04em;
+  width: 3rem;
+}
+
+.compact-plans {
+  border-top: 1px solid var(--line);
+  margin: 0 auto;
+  max-width: 78rem;
+  padding: 1.5rem clamp(1rem, 4vw, 4rem) 3rem;
+  text-align: center;
+}
+
+.compact-plans p {
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0 auto;
+  max-width: 52rem;
 }
 
 .hero-copy h1,
@@ -207,6 +310,37 @@ main {
   gap: 1rem;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: 2rem;
+}
+
+.config-header {
+  margin: 0 auto 2rem;
+  max-width: 64rem;
+}
+
+.config-header h1 {
+  font-size: clamp(2.5rem, 6vw, 5.5rem);
+  letter-spacing: -0.07em;
+  line-height: 0.95;
+  margin: 0;
+}
+
+.config-header p:not(.eyebrow) {
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  max-width: 42rem;
+}
+
+.back-link {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.85rem;
+  font-weight: 900;
+  margin-bottom: 1.5rem;
+  padding: 0.65rem 0.9rem;
 }
 
 .activity-card {
@@ -794,6 +928,7 @@ main {
 
   .asset-grid,
   .activity-picker,
+  .tool-grid,
   .card-grid,
   .roadmap-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -811,6 +946,7 @@ main {
   .flashcard-sheet,
   .asset-grid,
   .activity-picker,
+  .tool-grid,
   .card-grid,
   .planned-preview-grid,
   .roadmap-grid {
