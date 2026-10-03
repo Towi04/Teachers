@@ -594,6 +594,15 @@ main {
   padding: 1.25rem;
 }
 
+.tab-panel .policy-note {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.8rem;
+  display: block;
+  margin: 0;
+  padding: 0.75rem;
+}
+
 .accordion-body h4 {
   margin: 0;
 }
