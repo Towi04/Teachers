@@ -469,7 +469,7 @@ main {
 .control-panel {
   display: grid;
   gap: 1.25rem;
-  padding: 1.25rem;
+  padding: 1.25rem 1.25rem 5rem;
   position: sticky;
   top: 5rem;
 }
