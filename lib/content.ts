@@ -62,12 +62,14 @@ export type ActivityId =
   | "bingo"
   | "memory"
   | "reading"
+  | "listening"
   | "quiz";
 
 export type ActivityDefinition = {
   id: ActivityId;
   title: string;
   description: string;
+  icon: string;
   status: "available" | "next" | "planned";
   inputType: string;
   outputType: string;
@@ -225,6 +227,7 @@ export const activityDefinitions: ActivityDefinition[] = [
     title: "Create flashcards",
     description:
       "Design printable cards with words, images, examples, and optional back sides.",
+    icon: "FC",
     status: "available",
     inputType: "Vocabulary + images",
     outputType: "Printable cards",
@@ -241,7 +244,8 @@ export const activityDefinitions: ActivityDefinition[] = [
     title: "Create a crossword",
     description:
       "Turn vocabulary and clues into a classroom crossword worksheet.",
-    status: "next",
+    icon: "CW",
+    status: "available",
     inputType: "Words + clues",
     outputType: "Puzzle worksheet",
     accent: "#7c3aed",
@@ -257,6 +261,7 @@ export const activityDefinitions: ActivityDefinition[] = [
     title: "Create a word search",
     description:
       "Generate a hidden-word activity from any vocabulary list.",
+    icon: "WS",
     status: "next",
     inputType: "Vocabulary list",
     outputType: "Word puzzle",
@@ -273,15 +278,16 @@ export const activityDefinitions: ActivityDefinition[] = [
     title: "Create matching cards",
     description:
       "Match words to images, definitions, translations, or examples.",
-    status: "planned",
+    icon: "MT",
+    status: "next",
     inputType: "Pairs",
-    outputType: "Cut-out activity",
+    outputType: "Worksheet or cards",
     accent: "#16a34a",
     configurationHighlights: [
-      "Pair type",
-      "Cut lines",
-      "Image size",
-      "Student answer sheet",
+      "Match type",
+      "Cut-out or worksheet",
+      "Image pairs",
+      "Answer key",
     ],
   },
   {
@@ -289,7 +295,8 @@ export const activityDefinitions: ActivityDefinition[] = [
     title: "Create bingo boards",
     description:
       "Build randomized bingo sheets from vocabulary or pictures.",
-    status: "planned",
+    icon: "BG",
+    status: "next",
     inputType: "Word bank",
     outputType: "Multiple boards",
     accent: "#db2777",
@@ -305,6 +312,7 @@ export const activityDefinitions: ActivityDefinition[] = [
     title: "Create memory cards",
     description:
       "Prepare matching cards for vocabulary, pictures, and definitions.",
+    icon: "MM",
     status: "planned",
     inputType: "Pairs",
     outputType: "Card game",
@@ -321,6 +329,7 @@ export const activityDefinitions: ActivityDefinition[] = [
     title: "Create a reading worksheet",
     description:
       "Place a text and questions into a clean printable template.",
+    icon: "RD",
     status: "planned",
     inputType: "Text + questions",
     outputType: "Worksheet",
@@ -333,11 +342,29 @@ export const activityDefinitions: ActivityDefinition[] = [
     ],
   },
   {
+    id: "listening",
+    title: "Create listening worksheets",
+    description:
+      "Embed a YouTube video, add lyrics or a script, define vocabulary, and build richer listening tasks.",
+    icon: "LS",
+    status: "next",
+    inputType: "Video + script",
+    outputType: "Listening worksheet",
+    accent: "#dc2626",
+    configurationHighlights: [
+      "YouTube link",
+      "Lyrics/script",
+      "Vocabulary tasks",
+      "Answer key",
+    ],
+  },
+  {
     id: "quiz",
     title: "Create a printable quiz",
     description:
       "Format multiple-choice, true/false, or short-answer questions.",
-    status: "planned",
+    icon: "QZ",
+    status: "next",
     inputType: "Question bank",
     outputType: "Assessment",
     accent: "#475569",
