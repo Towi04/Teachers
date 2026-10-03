@@ -727,7 +727,18 @@ function DottedWord({ text }: { text: string }) {
       role="img"
       viewBox="0 0 420 90"
     >
-      <text dominantBaseline="middle" textAnchor="middle" x="50%" y="54%">
+      <text
+        dominantBaseline="middle"
+        fill="none"
+        stroke="currentColor"
+        strokeDasharray="0.1 12"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2.2"
+        textAnchor="middle"
+        x="50%"
+        y="54%"
+      >
         {text}
       </text>
     </svg>
