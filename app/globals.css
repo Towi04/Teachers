@@ -464,6 +464,16 @@ main {
   position: static;
 }
 
+.flashcard-mode .sheet-preview-stack {
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+}
+
+.flashcard-mode .flashcard-page.portrait .flashcard-sheet,
+.flashcard-mode .flashcard-page.landscape .flashcard-sheet {
+  aspect-ratio: auto;
+  min-height: 22rem;
+}
+
 .flashcard-mode .control-panel {
   position: static;
 }
