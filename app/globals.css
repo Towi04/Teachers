@@ -454,6 +454,20 @@ main {
   grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
 }
 
+.flashcard-mode .studio-grid {
+  grid-template-columns: 1fr;
+}
+
+.flashcard-mode .preview-area {
+  max-height: none;
+  order: -1;
+  position: static;
+}
+
+.flashcard-mode .control-panel {
+  position: static;
+}
+
 .control-panel,
 .preview-area,
 .info-card,
@@ -522,6 +536,47 @@ main {
   display: grid;
   gap: 1rem;
   padding: 1rem;
+}
+
+.tabbed-config {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+
+.tab-list {
+  background: #fffaf2;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding: 0.75rem;
+}
+
+.tab-list button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  flex: 0 0 auto;
+  font-weight: 1000;
+  padding: 0.75rem 1rem;
+  text-transform: uppercase;
+}
+
+.tab-list button.active {
+  background: white;
+  border-color: var(--brand);
+  color: var(--ink);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+}
+
+.tab-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
 }
 
 .accordion-body h4 {

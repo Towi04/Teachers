@@ -128,7 +128,10 @@ export function ActivityStudio({
   const canPublish = visibility === "private" || publicReady;
 
   return (
-    <section className="activity-studio" id="create">
+    <section
+      className={isFlashcards ? "activity-studio flashcard-mode" : "activity-studio"}
+      id="create"
+    >
       {showPicker ? (
         <>
           <div className="section-heading">
@@ -349,6 +352,9 @@ function FlashcardControls({
   setSheetSize: (size: SheetSize) => void;
   sheetSize: SheetSize;
 }) {
+  const [activeTab, setActiveTab] = useState<
+    "title" | "texts" | "design" | "page" | "typography"
+  >("title");
   const updateItem = (
     itemId: string,
     field: keyof Omit<EditableVocabularyItem, "id" | "assetId">,
@@ -405,8 +411,31 @@ function FlashcardControls({
   };
 
   return (
-    <>
-      <Accordion title="Title" defaultOpen>
+    <div className="tabbed-config">
+      <div className="tab-list" role="tablist" aria-label="Flashcard settings">
+        {([
+          ["title", "Title"],
+          ["texts", "Texts"],
+          ["design", "Design"],
+          ["page", "Page"],
+          ["typography", "Typography/audio"],
+        ] as const).map(([tab, label]) => (
+          <button
+            aria-selected={activeTab === tab}
+            className={activeTab === tab ? "active" : ""}
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            role="tab"
+            type="button"
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="tab-panel" role="tabpanel">
+        {activeTab === "title" ? (
+          <>
         <label className="field-stack">
           <span>Flashcard set title</span>
           <input
@@ -419,9 +448,11 @@ function FlashcardControls({
         <p className="policy-note">
           This name will be used for saving, publishing, and finding the material later.
         </p>
-      </Accordion>
+          </>
+        ) : null}
 
-      <Accordion title="Texts" defaultOpen>
+        {activeTab === "texts" ? (
+          <>
         <div className="csv-actions">
           <button className="secondary-button" onClick={downloadCsvTemplate} type="button">
             Download CSV template
@@ -471,9 +502,11 @@ function FlashcardControls({
             </div>
           ))}
         </div>
-      </Accordion>
+          </>
+        ) : null}
 
-      <Accordion title="Design" defaultOpen>
+        {activeTab === "design" ? (
+          <>
         <h4>Print sides</h4>
         <div className="segmented">
           <button
@@ -503,9 +536,11 @@ function FlashcardControls({
             setSettings={setBackSettings}
           />
         ) : null}
-      </Accordion>
+          </>
+        ) : null}
 
-      <Accordion title="Page">
+        {activeTab === "page" ? (
+          <>
         <h4>Cards per sheet</h4>
         <div className="segmented six">
           {cardsPerSheetOptions.map((count) => (
@@ -570,9 +605,11 @@ function FlashcardControls({
           <LockedOption enabled={false} label="A4" value="Members only" />
           <LockedOption enabled={false} label="Legal" value="Members only" />
         </div>
-      </Accordion>
+          </>
+        ) : null}
 
-      <Accordion title="Typography and audio">
+        {activeTab === "typography" ? (
+          <>
         <h4>Font style</h4>
         <div className="segmented three">
           {(["rounded", "classic", "bold"] as FontStyle[]).map((font) => (
@@ -590,8 +627,10 @@ function FlashcardControls({
         <p className="policy-note">
           Enable the Audio QR field on either side to show a scan code for word audio.
         </p>
-      </Accordion>
-    </>
+          </>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
