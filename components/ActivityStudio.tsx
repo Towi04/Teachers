@@ -615,6 +615,7 @@ function FlashcardPreview({
           cardsPerSheet={cardsPerSheet}
           fontStyle={fontStyle}
           initialSet={initialSet}
+          mirrorForBack
           orientation={orientation}
           settings={backSettings}
           sheetLabel="Back side"
@@ -630,6 +631,7 @@ function FlashcardSheet({
   cardsPerSheet,
   fontStyle,
   initialSet,
+  mirrorForBack = false,
   orientation,
   settings,
   sheetLabel,
@@ -639,6 +641,7 @@ function FlashcardSheet({
   cardsPerSheet: CardsPerSheet;
   fontStyle: FontStyle;
   initialSet: VocabularySet;
+  mirrorForBack?: boolean;
   orientation: Orientation;
   settings: FlashcardSideSettings;
   sheetLabel: string;
@@ -647,6 +650,9 @@ function FlashcardSheet({
   const previewItems = Array.from({ length: cardsPerSheet }, (_, index) => {
     return initialSet.items[index % initialSet.items.length];
   });
+  const orderedItems = mirrorForBack
+    ? mirrorItemsByPrintedRow(previewItems, cardsPerSheet)
+    : previewItems;
 
   return (
     <section className={`flashcard-page sheet-${sheetSize} ${orientation}`}>
@@ -659,7 +665,7 @@ function FlashcardSheet({
       <div
         className={`flashcard-sheet cards-${cardsPerSheet} layout-${cardLayout} font-${fontStyle}`}
       >
-        {previewItems.map((item, index) => {
+        {orderedItems.map((item, index) => {
           const asset = getAsset(item.assetId);
           const reusableCount = getReusableAssetsForWord(item.word).length;
 
@@ -706,10 +712,12 @@ function FlashcardSheet({
                     <small>Scan for audio</small>
                   </div>
                 ) : null}
-                <div className="asset-meta">
-                  <span>{asset?.licenseStatus ?? "No asset"}</span>
-                  <span>{reusableCount} reusable image option(s)</span>
-                </div>
+                {settings.content.image ? (
+                  <div className="asset-meta">
+                    <span>{asset?.licenseStatus ?? "No asset"}</span>
+                    <span>{reusableCount} reusable image option(s)</span>
+                  </div>
+                ) : null}
               </div>
             </article>
           );
@@ -717,6 +725,25 @@ function FlashcardSheet({
       </div>
     </section>
   );
+}
+
+function mirrorItemsByPrintedRow<T>(items: T[], cardsPerSheet: CardsPerSheet) {
+  const columnsByCount: Record<CardsPerSheet, number> = {
+    1: 1,
+    2: 2,
+    3: 3,
+    4: 2,
+    6: 4,
+    8: 4,
+  };
+  const columns = columnsByCount[cardsPerSheet];
+  const mirrored: T[] = [];
+
+  for (let index = 0; index < items.length; index += columns) {
+    mirrored.push(...items.slice(index, index + columns).reverse());
+  }
+
+  return mirrored;
 }
 
 function DottedWord({ text }: { text: string }) {
