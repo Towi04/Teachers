@@ -645,9 +645,14 @@ main {
   align-items: center;
   border-bottom: 1px solid var(--line);
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   justify-content: space-between;
   padding: 1.25rem;
+}
+
+.preview-toolbar > div {
+  min-width: 0;
 }
 
 .preview-toolbar h3 {
