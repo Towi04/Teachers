@@ -689,6 +689,7 @@ function FlashcardSheet({
                     alt={asset.alt}
                     width={640}
                     height={480}
+                    style={{ height: "100%", objectFit: "cover", width: "100%" }}
                   />
                 </div>
               ) : null}
