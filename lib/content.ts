@@ -54,6 +54,27 @@ export type PlanTier = {
   publicDownloads: string;
 };
 
+export type ActivityId =
+  | "flashcards"
+  | "crossword"
+  | "word-search"
+  | "matching"
+  | "bingo"
+  | "memory"
+  | "reading"
+  | "quiz";
+
+export type ActivityDefinition = {
+  id: ActivityId;
+  title: string;
+  description: string;
+  status: "available" | "next" | "planned";
+  inputType: string;
+  outputType: string;
+  accent: string;
+  configurationHighlights: string[];
+};
+
 export const vocabularyAssets: VocabularyAsset[] = [
   {
     id: "run-park",
@@ -195,6 +216,137 @@ export const planTiers: PlanTier[] = [
     dailyDownloads: "Shared school library",
     canUseSchoolLogo: true,
     publicDownloads: "Institution-wide content access",
+  },
+];
+
+export const activityDefinitions: ActivityDefinition[] = [
+  {
+    id: "flashcards",
+    title: "Create flashcards",
+    description:
+      "Design printable cards with words, images, examples, and optional back sides.",
+    status: "available",
+    inputType: "Vocabulary + images",
+    outputType: "Printable cards",
+    accent: "#f97316",
+    configurationHighlights: [
+      "Card size",
+      "Frame color",
+      "Images on/off",
+      "Front only or double-sided",
+    ],
+  },
+  {
+    id: "crossword",
+    title: "Create a crossword",
+    description:
+      "Turn vocabulary and clues into a classroom crossword worksheet.",
+    status: "next",
+    inputType: "Words + clues",
+    outputType: "Puzzle worksheet",
+    accent: "#7c3aed",
+    configurationHighlights: [
+      "Grid difficulty",
+      "Clue placement",
+      "Answer key",
+      "Large-print mode",
+    ],
+  },
+  {
+    id: "word-search",
+    title: "Create a word search",
+    description:
+      "Generate a hidden-word activity from any vocabulary list.",
+    status: "next",
+    inputType: "Vocabulary list",
+    outputType: "Word puzzle",
+    accent: "#0891b2",
+    configurationHighlights: [
+      "Grid size",
+      "Word directions",
+      "Picture hints",
+      "Answer key",
+    ],
+  },
+  {
+    id: "matching",
+    title: "Create matching cards",
+    description:
+      "Match words to images, definitions, translations, or examples.",
+    status: "planned",
+    inputType: "Pairs",
+    outputType: "Cut-out activity",
+    accent: "#16a34a",
+    configurationHighlights: [
+      "Pair type",
+      "Cut lines",
+      "Image size",
+      "Student answer sheet",
+    ],
+  },
+  {
+    id: "bingo",
+    title: "Create bingo boards",
+    description:
+      "Build randomized bingo sheets from vocabulary or pictures.",
+    status: "planned",
+    inputType: "Word bank",
+    outputType: "Multiple boards",
+    accent: "#db2777",
+    configurationHighlights: [
+      "Board size",
+      "Number of boards",
+      "Free space",
+      "Image mode",
+    ],
+  },
+  {
+    id: "memory",
+    title: "Create memory cards",
+    description:
+      "Prepare matching cards for vocabulary, pictures, and definitions.",
+    status: "planned",
+    inputType: "Pairs",
+    outputType: "Card game",
+    accent: "#ca8a04",
+    configurationHighlights: [
+      "Pair layout",
+      "Back design",
+      "Card size",
+      "Cut guides",
+    ],
+  },
+  {
+    id: "reading",
+    title: "Create a reading worksheet",
+    description:
+      "Place a text and questions into a clean printable template.",
+    status: "planned",
+    inputType: "Text + questions",
+    outputType: "Worksheet",
+    accent: "#2563eb",
+    configurationHighlights: [
+      "Reading layout",
+      "Question style",
+      "Answer space",
+      "Teacher key",
+    ],
+  },
+  {
+    id: "quiz",
+    title: "Create a printable quiz",
+    description:
+      "Format multiple-choice, true/false, or short-answer questions.",
+    status: "planned",
+    inputType: "Question bank",
+    outputType: "Assessment",
+    accent: "#475569",
+    configurationHighlights: [
+      "Question types",
+      "Point values",
+      "Answer key",
+      "Randomization",
+    ],
   },
 ];
 

@@ -1,22 +1,11 @@
-import { FlashcardStudio } from "@/components/FlashcardStudio";
+import { ActivityStudio } from "@/components/ActivityStudio";
 import Image from "next/image";
 import {
-  flashcardTemplates,
+  activityDefinitions,
   planTiers,
   vocabularyAssets,
   vocabularySets,
 } from "@/lib/content";
-
-const printableActivities = [
-  "Flashcards",
-  "Matching worksheets",
-  "Word searches",
-  "Bingo cards",
-  "Memory cards",
-  "Spelling practice",
-  "Reading worksheets",
-  "Printable quizzes",
-];
 
 const roadmap = [
   {
@@ -61,7 +50,7 @@ export default function Home() {
           MyOwnMaterials
         </a>
         <div>
-          <a href="#studio">Studio</a>
+          <a href="#create">Create</a>
           <a href="#library">Library</a>
           <a href="#pricing">Plans</a>
           <a href="#roadmap">Roadmap</a>
@@ -70,15 +59,16 @@ export default function Home() {
 
       <section className="hero" id="top">
         <div className="hero-copy">
-          <p className="eyebrow">Printable-first teaching materials</p>
-          <h1>Create your own teaching materials for any classroom.</h1>
+          <p className="eyebrow">MyOwnMaterials</p>
+          <h1>What do you want to create today?</h1>
           <p>
-            Add words, images, texts, and questions once. Turn them into
-            beautiful printable resources without needing design skills.
+            Pick an activity first, then configure its layout, images, print
+            options, and member-only upgrades. We will expand each creator one
+            activity at a time.
           </p>
           <div className="hero-actions no-print">
-            <a className="primary-link" href="#studio">
-              Start with flashcards
+            <a className="primary-link" href="#create">
+              Choose an activity
             </a>
             <a className="secondary-link" href="#roadmap">
               See the roadmap
@@ -86,23 +76,15 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="hero-card no-print" aria-label="Product flow">
-          <span>Add content</span>
-          <strong>Vocabulary set</strong>
-          <span>Choose activity</span>
-          <strong>Flashcards</strong>
-          <span>Pick template</span>
-          <strong>Print-ready PDF</strong>
+        <div className="hero-card no-print" aria-label="Available creators">
+          <span>Printable creators</span>
+          {activityDefinitions.slice(0, 4).map((activity) => (
+            <strong key={activity.id}>{activity.title.replace("Create ", "")}</strong>
+          ))}
         </div>
       </section>
 
-      <section className="feature-band no-print" aria-label="Printable activities">
-        {printableActivities.map((activity) => (
-          <span key={activity}>{activity}</span>
-        ))}
-      </section>
-
-      <FlashcardStudio initialSet={vocabularySet} />
+      <ActivityStudio initialSet={vocabularySet} />
 
       <section className="library-section no-print" id="library">
         <div className="section-heading">
@@ -135,19 +117,24 @@ export default function Home() {
 
       <section className="template-section no-print">
         <div className="section-heading">
-          <p className="eyebrow">Templates</p>
-          <h2>Design help for teachers who already have great content.</h2>
+          <p className="eyebrow">Activity-first workflow</p>
+          <h2>Each material type gets its own focused settings.</h2>
+          <p>
+            Flashcards can have card size, frame color, images, print sides,
+            fonts, and member-only branding. Crosswords, word searches, bingo,
+            and worksheets will get their own panels as they are built.
+          </p>
         </div>
         <div className="card-grid">
-          {flashcardTemplates.map((template) => (
-            <article className="info-card" key={template.id}>
+          {activityDefinitions.slice(0, 4).map((activity) => (
+            <article className="info-card" key={activity.id}>
               <span
                 aria-hidden="true"
                 className="template-dot"
-                style={{ background: template.accent }}
+                style={{ background: activity.accent }}
               />
-              <h3>{template.name}</h3>
-              <p>{template.description}</p>
+              <h3>{activity.title}</h3>
+              <p>{activity.configurationHighlights.join(", ")}</p>
             </article>
           ))}
         </div>
