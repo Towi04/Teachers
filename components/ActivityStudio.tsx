@@ -195,7 +195,7 @@ export function ActivityStudio({
           className="control-panel no-print"
           aria-label={`${selectedActivity?.title ?? "Activity"} settings`}
         >
-          <div className="panel-section">
+          <div className="panel-section shared-content-source">
             <h3>Content source</h3>
             <div className="content-card">
               <span>{initialSet.subject}</span>
@@ -207,7 +207,7 @@ export function ActivityStudio({
             </div>
           </div>
 
-          <div className="panel-section">
+          <div className="panel-section shared-visibility">
             <h3>Visibility</h3>
             <div className="segmented">
               <button

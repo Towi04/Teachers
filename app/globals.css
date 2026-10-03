@@ -478,6 +478,11 @@ main {
   position: static;
 }
 
+.flashcard-mode .shared-content-source,
+.flashcard-mode .shared-visibility {
+  display: none;
+}
+
 .control-panel,
 .preview-area,
 .info-card,
